@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## [0.1.0] - 2026-06-23
+
+### Added
+
+- Initial Spec Kit extension manifest.
+- Intake commands for visual design, PRD, and test-case sources.
+- Intake contracts and evidence packet templates for visual design, PRD, and test-case sources.
+- Local readiness validators for PRD, test-case, visual design, and Figma metadata intake artifacts.
 
 ### Changed
 
@@ -9,12 +16,3 @@
 - Added support contracts for image, PDF, Markdown, and Figma sources across low, medium, and high-fidelity drafts.
 - Added readiness concepts for source integrity, visual requirement traceability, fidelity rules, and delivery parity planning.
 - Updated the validator to support generic visual sources while preserving Figma metadata parity validation.
-
-## [0.1.0] - 2026-06-22
-
-### Added
-
-- Initial Spec Kit extension manifest.
-- Figma intake capture and validate commands.
-- Figma intake contract and evidence packet templates.
-- Local readiness validator for metadata, index, and inventory parity.
