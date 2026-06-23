@@ -65,12 +65,26 @@ Machine-readable JSON Schemas live under `templates/schemas/` and are used by th
 
 All intake commands provide capture instructions, evidence contracts, and readiness validation. Visual design validation additionally checks visual fidelity and Figma metadata parity.
 
+## Requirements
+
+- Spec Kit `>=0.8.10.dev0`
+- Python validator dependencies: `PyYAML` and `jsonschema`
+- Optional: `figma-mcp` for Figma metadata capture
+
 ## Install for Local Development
 
 From a Spec Kit project:
 
 ```bash
 specify extension add --dev C:/Users/24598/Documents/github/spec-kit-intake
+```
+
+## Install from Release
+
+From a Spec Kit project:
+
+```bash
+specify extension add intake --from https://github.com/bigsmartben/spec-kit-intake/archive/refs/tags/v0.1.2.zip
 ```
 
 Then run:

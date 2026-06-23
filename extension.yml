@@ -3,8 +3,8 @@
 extension:
   id: intake
   name: "Intake"
-  version: "0.1.1"
-  description: "Extract and validate SDD-ready intake artifacts from PRDs, visual designs, test cases, and other software sources"
+  version: "0.1.2"
+  description: "Normalize PRD, design, and test-case evidence into SDD-ready intake artifacts"
   author: "bigsmartben"
   repository: "https://github.com/bigsmartben/spec-kit-intake"
   homepage: "https://github.com/bigsmartben/spec-kit-intake"
@@ -46,16 +46,9 @@ hooks:
 tags:
   - "intake"
   - "sdd"
-  - "prd"
-  - "test-cases"
-  - "visual-design"
-  - "figma"
-  - "image"
-  - "pdf"
-  - "markdown"
-  - "design"
   - "requirements"
   - "validation"
+  - "figma"
 
 defaults:
   artifacts:

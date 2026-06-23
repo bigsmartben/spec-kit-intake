@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2] - 2026-06-23
+
+### Changed
+
+- Added release installation and runtime dependency documentation.
+- Shortened manifest description and reduced tags for community catalog submission.
+
 ## [0.1.1] - 2026-06-23
 
 ### Changed
