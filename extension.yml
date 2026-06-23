@@ -3,12 +3,14 @@
 extension:
   id: intake
   name: "Intake"
-  version: "0.1.0"
+  version: "0.1.1"
   description: "Extract and validate SDD-ready intake artifacts from PRDs, visual designs, test cases, and other software sources"
   author: "bigsmartben"
   repository: "https://github.com/bigsmartben/spec-kit-intake"
   homepage: "https://github.com/bigsmartben/spec-kit-intake"
   license: "MIT"
+  category: "docs"
+  effect: "read-write"
 
 requires:
   speckit_version: ">=0.8.10.dev0"

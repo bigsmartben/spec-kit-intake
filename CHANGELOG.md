@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.1] - 2026-06-23
+
+### Changed
+
+- Added community catalog metadata for category and effect.
+
 ## [0.1.0] - 2026-06-23
 
 ### Added
