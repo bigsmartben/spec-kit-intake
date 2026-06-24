@@ -1,0 +1,172 @@
+name: Community Source Contract
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: community-source-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install manifest validation dependencies
+        run: python3 -m pip install --upgrade PyYAML jsonschema
+
+      - name: Validate source manifest contract
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          import yaml
+
+          root = Path.cwd()
+          manifest_path = root / "extension.yml"
+          manifest_kind = "extension"
+          if not manifest_path.is_file():
+              manifest_path = root / "preset.yml"
+              manifest_kind = "preset"
+          if not manifest_path.is_file():
+              raise SystemExit("expected extension.yml or preset.yml")
+
+          data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+          if not isinstance(data, dict):
+              raise SystemExit(f"{manifest_path.name} must contain a mapping")
+          if data.get("schema_version") != "1.0":
+              raise SystemExit("schema_version must be 1.0")
+
+          meta = data.get(manifest_kind)
+          if not isinstance(meta, dict):
+              raise SystemExit(f"missing {manifest_kind} metadata")
+
+          item_id = meta.get("id")
+          version = meta.get("version")
+          repository = meta.get("repository")
+          if not isinstance(item_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]*", item_id):
+              raise SystemExit(f"invalid {manifest_kind} id: {item_id!r}")
+          if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
+              raise SystemExit(f"invalid semver version: {version!r}")
+          if not isinstance(repository, str) or not repository.startswith("https://github.com/"):
+              raise SystemExit("repository must be an https GitHub URL")
+
+          for required_file in ("README.md", "LICENSE", "CHANGELOG.md"):
+              if not (root / required_file).is_file():
+                  raise SystemExit(f"missing {required_file}")
+
+          requires = data.get("requires")
+          if not isinstance(requires, dict) or not requires.get("speckit_version"):
+              raise SystemExit("requires.speckit_version is required")
+
+          provides = data.get("provides")
+          if not isinstance(provides, dict):
+              raise SystemExit("provides must be a mapping")
+
+          referenced_files = []
+          if manifest_kind == "extension":
+              commands = provides.get("commands")
+              if not isinstance(commands, list) or not commands:
+                  raise SystemExit("extension provides.commands must be a non-empty list")
+              for command in commands:
+                  if not isinstance(command, dict):
+                      raise SystemExit("command entries must be mappings")
+                  name = command.get("name")
+                  file_name = command.get("file")
+                  if not isinstance(name, str) or not name.startswith("speckit."):
+                      raise SystemExit(f"invalid command name: {name!r}")
+                  if not isinstance(file_name, str):
+                      raise SystemExit(f"command {name!r} missing file")
+                  referenced_files.append(file_name)
+              for config in provides.get("config", []) or []:
+                  if isinstance(config, dict) and isinstance(config.get("template"), str):
+                      referenced_files.append(config["template"])
+          else:
+              templates = provides.get("templates")
+              if not isinstance(templates, list) or not templates:
+                  raise SystemExit("preset provides.templates must be a non-empty list")
+              for template in templates:
+                  if not isinstance(template, dict):
+                      raise SystemExit("template entries must be mappings")
+                  file_name = template.get("file")
+                  if not isinstance(file_name, str):
+                      raise SystemExit(f"template {template.get('name')!r} missing file")
+                  referenced_files.append(file_name)
+
+          missing = [path for path in referenced_files if not (root / path).is_file()]
+          if missing:
+              raise SystemExit(f"manifest references missing files: {missing}")
+
+          tags = data.get("tags")
+          if not isinstance(tags, list) or not tags:
+              raise SystemExit("tags must be a non-empty list")
+          PY
+
+      - name: Validate integration repository boundary
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          blocked_patterns = (
+              "gh pr create --repo " + "github/spec-kit",
+              "repos/" + "github/spec-kit" + "/dispatches",
+              "repos/" + "github/spec-kit" + "/pulls",
+              "github.com/" + "github/spec-kit" + "/compare",
+          )
+          offenders = []
+          for workflow in Path(".github/workflows").glob("*.yml"):
+              text = workflow.read_text(encoding="utf-8")
+              for pattern in blocked_patterns:
+                  if pattern in text:
+                      offenders.append(f"{workflow}: {pattern}")
+          if offenders:
+              raise SystemExit(
+                  "source repositories must not automate direct submissions to github/spec-kit:\n"
+                  + "\n".join(offenders)
+              )
+          PY
+
+      - name: Install project test dependencies
+        if: hashFiles('requirements-dev.txt') != ''
+        run: python3 -m pip install -r requirements-dev.txt
+
+      - name: Run shell contract tests
+        if: hashFiles('tests/repository-first-contract.sh') != ''
+        run: bash tests/repository-first-contract.sh
+
+      - name: Run extension validator
+        if: hashFiles('tests/validate-extension.py') != ''
+        run: python3 tests/validate-extension.py
+
+      - name: Run Python tests from requirements projects
+        if: hashFiles('requirements-dev.txt') != '' && hashFiles('tests/test_*.py') != ''
+        run: |
+          python3 - <<'PY'
+          import importlib.util
+          import subprocess
+          import sys
+
+          if importlib.util.find_spec("pytest") is not None:
+              subprocess.run([sys.executable, "-m", "pytest", "-q"], check=True)
+          else:
+              subprocess.run(
+                  [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"],
+                  check=True,
+              )
+          PY
