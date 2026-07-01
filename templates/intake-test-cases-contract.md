@@ -18,8 +18,9 @@ Required source fields:
 - source_files:
   - path:
   - mime_type:
-  - byte_size:
-  - sha256:
+  - byte_size: required for local files or captured snapshots
+  - sha256: required for local files or captured snapshots
+  - checksum_status: verified|unavailable|not_applicable
   - role: original|export|attachment|snapshot
 - source_integrity_complete:
 - captured_at:
@@ -33,7 +34,7 @@ Source-specific requirements:
 - Gherkin sources must record feature, background, scenario, examples, tags, and step coverage.
 - Spreadsheets or test management exports must record sheet or suite names, row IDs, case IDs, priorities, statuses, and imported range coverage.
 - Issue or bug repro sources must record stable URLs, repro steps, expected and actual behavior, environment, and linked artifacts.
-- Remote source refs may use a stable URL as `source_files[].path`; when no local snapshot exists, record retrieval metadata and mark unavailable checksum fields as explicit gaps instead of pretending integrity is complete.
+- Remote source refs may use a stable URL as `source_files[].path`; when no local snapshot exists, record retrieval metadata, `snapshot_status`, `integrity_gap_reason`, and `checksum_status: unavailable|not_applicable` instead of pretending integrity is complete.
 - Mixed source packets must preserve source precedence and record duplicate or conflicting scenarios.
 
 ## Vertical Scenario Coverage

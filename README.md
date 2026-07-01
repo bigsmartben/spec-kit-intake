@@ -1,6 +1,6 @@
 # Spec Kit Intake Extension
 
-Extract, normalize, and validate SDD-ready intake artifacts from PRDs, visual designs, Figma-derived HTML visual SSOT bundles, test cases, and other software sources before downstream Spec Kit workflows project them into requirements.
+Extract, normalize, and validate SDD-ready intake artifacts from PRDs, visual designs, Figma-derived HTML visual SSOT bundles, structured UI acceptance IR, test cases, and other software sources before downstream Spec Kit workflows project them into requirements.
 
 The first goal of intake is not to generate requirements. It is to preserve as much input information as possible and turn it into structured material that SDD `specify` can consume accurately.
 
@@ -16,6 +16,7 @@ Intake artifacts are validated in two layers: JSON Schema checks enforce the req
 - PDF design packs and annotated review documents
 - Figma files, pages, frames, nodes, components, variables, and exported screenshots
 - Figma-derived HTML visual SSOT bundles with traceable component-state and page coverage
+- Structured UI acceptance IR with CI-friendly DOM, ARIA, token, state, locator, relation, and assertion facts
 - Existing test cases, Gherkin files, QA exports, and test management spreadsheets
 
 ## Intake Scenario Coverage
@@ -26,7 +27,8 @@ Intake commands are organized by vertical source domain. Each domain uses the sa
 | --- | --- | --- | --- |
 | PRD | product briefs, Markdown PRDs, exported docs, PDFs, issue or epic links, mixed stakeholder notes | `prd-intake.yaml` | source identity, product intent traceability, scope boundaries, acceptance evidence, clarification gaps |
 | Visual design | static images, wireframes, PDF design packs, Markdown design briefs, Figma files or selected nodes | `visual-requirements.yaml` | source integrity, fidelity rules, visual requirement traceability, parity planning, Figma metadata completeness when relevant |
-| Figma to HTML SSOT | Figma files or selected nodes projected into runnable HTML visual acceptance surfaces | `visual-spec.html` | Figma node coverage, component-instance-state coverage, page coverage, asset traceability, viewport screenshots, known gaps |
+| Figma to HTML SSOT | Figma files or selected nodes projected into runnable HTML visual acceptance surfaces | `visual-spec.html` | Figma node coverage, component-state coverage, page coverage, asset traceability, viewport screenshots, known gaps |
+| Structured UI acceptance IR | visual design evidence and optional HTML SSOT enhancement refs projected into deterministic UI acceptance facts | `structured-ir.yaml` and `ir-assertions.yaml` | source traceability, provider/product gap separation, provider-neutral locators, DOM/ARIA/token/state/relation assertions, CI-low-cost readiness |
 | Test cases | automated tests, Gherkin files, manual QA cases, spreadsheets, test management exports, bug or issue repro steps | `test-case-intake.yaml` | scenario traceability, assertion extraction, fixture evidence, coverage gaps, flaky or skipped case reporting |
 
 Vertical instructions should never convert source evidence directly into downstream-owned requirement IDs, implementation tasks, or code component names. They produce provider-neutral intake facts that downstream workflows can consume with source refs intact.
@@ -35,6 +37,7 @@ Vertical instructions should never convert source evidence directly into downstr
 
 - `/speckit.intake.visual-design` captures or validates visual design evidence, source manifests, Figma metadata when available, inventories, and readiness for the active feature.
 - `/speckit.intake.figma2htmlssot` creates or validates a Figma-derived HTML visual SSOT bundle with node, component-state, page, asset, viewport, and screenshot coverage.
+- `/speckit.intake.ir` creates or validates structured UI acceptance IR for CI-friendly DOM, ARIA, token, state, locator, relation, and assertion checks.
 - `/speckit.intake.prd` captures or validates PRD evidence and normalizes product intent, scope, business rules, acceptance criteria, and clarification items.
 - `/speckit.intake.test-cases` captures or validates test case evidence and normalizes scenarios, assertions, fixtures, and coverage gaps.
 
@@ -62,6 +65,10 @@ specs/<feature>/intake/
 │       ├── coverage-report.md
 │       ├── known-gaps.md
 │       └── screenshots/
+│   └── structured-ir/
+│       ├── structured-ir.yaml
+│       ├── ir-assertions.yaml
+│       └── ir-evidence-packet.md
 └── test-cases/
     ├── source-manifest.yaml
     ├── source-files/
@@ -71,10 +78,11 @@ specs/<feature>/intake/
 
 Figma metadata artifacts are required for Figma visual-design sources. Image, PDF, and Markdown visual-design sources use `design-source-manifest.yaml`, source-file checksums, extracted visual requirements, and visual parity evidence instead. PRD and test-case domains use their own source manifests and normalized intake files.
 
-Machine-readable JSON Schemas live under `templates/schemas/` and are used by the validators before readiness rules run. HTML SSOT bundles use `figma-map.schema.json`, `assets-manifest.schema.json`, and `html-ssot-coverage.schema.json`.
+Machine-readable JSON Schemas live under `templates/schemas/` and are used by the validators before readiness rules run. HTML SSOT bundles use `figma-map.schema.json`, `assets-manifest.schema.json`, and `html-ssot-coverage.schema.json`. Structured IR uses `structured-ir.schema.json` and `ir-assertions.schema.json`.
 
 All intake commands provide capture instructions, evidence contracts, and readiness validation. Visual design validation additionally checks visual fidelity and Figma metadata parity.
 HTML SSOT validation is owned by `scripts/python/validate_html_ssot.py`, including cross-file checks for selectors, assets, screenshots, coverage, and known gaps.
+Structured IR validation is owned by `scripts/python/validate_structured_ir_intake.py`, including source readiness, schema, cross-reference, locator, downstream-ownership, provider-evidence, product-ambiguity, and CI assertion checks.
 
 ## Requirements
 
@@ -98,6 +106,14 @@ From a Spec Kit project:
 specify extension add intake --from https://github.com/bigsmartben/spec-kit-intake/archive/refs/tags/v0.1.3.zip
 ```
 
+Release artifacts must include source-backed provenance for the `bigsmartben/spec-kit` integration fork. The release workflow uploads `release-provenance.json` with:
+
+- `repository_url`
+- `release_version`
+- `source_commit_sha`
+- `download_url`
+- `validation_evidence`
+
 Then run:
 
 ```text
@@ -105,6 +121,8 @@ Then run:
 /speckit.intake.visual-design validate
 /speckit.intake.figma2htmlssot build <figma source or visual-design intake scope>
 /speckit.intake.figma2htmlssot validate
+/speckit.intake.ir build <visual-design intake scope or HTML SSOT enhancement refs>
+/speckit.intake.ir validate
 /speckit.intake.prd capture <prd source and scope>
 /speckit.intake.prd validate
 /speckit.intake.test-cases capture <test source and scope>
@@ -146,7 +164,21 @@ Figma-derived HTML SSOT passes only when:
 - screenshot coverage and visual-diff status are recorded
 - known gaps are explicit and no blocking gap remains unresolved
 
-The HTML SSOT validator emits blocker codes such as `HTML_SSOT_REQUIRED_ARTIFACT_MISSING`, `HTML_SSOT_FIGMA_NODE_COVERAGE_INCOMPLETE`, `HTML_SSOT_COMPONENT_STATE_COVERAGE_INCOMPLETE`, `HTML_SSOT_PAGE_COVERAGE_INCOMPLETE`, `HTML_SSOT_ASSET_TRACEABILITY_INCOMPLETE`, `HTML_SSOT_VIEWPORT_CAPTURE_INCOMPLETE`, `HTML_SSOT_VISUAL_DIFF_BLOCKED`, and `HTML_SSOT_KNOWN_GAP_UNRESOLVED`.
+The HTML SSOT validator emits blocker codes such as `HTML_SSOT_SOURCE_INTAKE_BLOCKED`, `HTML_SSOT_REQUIRED_ARTIFACT_MISSING`, `HTML_SSOT_SCHEMA_INVALID`, `HTML_SSOT_FIGMA_NODE_COVERAGE_INCOMPLETE`, `HTML_SSOT_COMPONENT_STATE_COVERAGE_INCOMPLETE`, `HTML_SSOT_PAGE_COVERAGE_INCOMPLETE`, `HTML_SSOT_ASSET_TRACEABILITY_INCOMPLETE`, `HTML_SSOT_VIEWPORT_CAPTURE_INCOMPLETE`, `HTML_SSOT_VISUAL_DIFF_BLOCKED`, and `HTML_SSOT_KNOWN_GAP_UNRESOLVED`.
+
+## Structured IR Readiness Gate
+
+Structured UI acceptance IR passes only when:
+
+- upstream visual-design intake is ready
+- `structured-ir.yaml`, `ir-assertions.yaml`, and `ir-evidence-packet.md` exist
+- IR items preserve source refs, page, region, role, state, viewport, provider-neutral locator strategy, expectations, acceptance intent, confidence, status, and blockers
+- assertions reference existing IR items and include ready `ci_low_cost` checks
+- missing provider evidence and product ambiguity are represented with distinct blocker paths
+- locator strategies avoid implementation-owned CSS selectors, XPath, generated class names, downstream test IDs, code component names, tasks, or requirement IDs
+- HTML SSOT, screenshots, and visual diffs remain enhancement evidence rather than the primary acceptance substrate
+
+The structured IR validator emits blocker codes such as `IR_SOURCE_INTAKE_BLOCKED`, `IR_REQUIRED_ARTIFACT_MISSING`, `IR_SCHEMA_INVALID`, `IR_INTAKE_INCOMPLETE`, `IR_PROVIDER_EVIDENCE_MISSING`, `IR_PRODUCT_AMBIGUITY_UNRESOLVED`, `IR_ASSERTION_COVERAGE_INCOMPLETE`, `IR_LOCATOR_STRATEGY_INVALID`, `IR_DOWNSTREAM_OWNERSHIP_LEAK`, and `IR_READY_WITHOUT_EVIDENCE`.
 
 ## Development
 
@@ -166,6 +198,12 @@ Validate HTML SSOT bundles:
 
 ```bash
 python scripts/python/validate_html_ssot.py specs/<feature>/intake/visual-design/figma2htmlssot
+```
+
+Validate structured IR artifacts:
+
+```bash
+python scripts/python/validate_structured_ir_intake.py specs/<feature>/intake/visual-design/structured-ir
 ```
 
 Validate PRD artifacts:

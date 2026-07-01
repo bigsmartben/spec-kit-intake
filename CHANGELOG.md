@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added `/speckit.intake.ir` for structured UI acceptance IR with CI-friendly DOM, ARIA, token, state, locator, relation, and assertion evidence.
+- Added structured IR schemas and `validate_structured_ir_intake.py` for source readiness, cross-reference, provider-evidence, product-ambiguity, locator, downstream-ownership, and CI assertion checks.
+
 ## [0.1.3] - 2026-06-29
 
 ### Added

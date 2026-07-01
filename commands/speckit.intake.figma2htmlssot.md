@@ -17,7 +17,7 @@ Classify the input before proceeding:
 
 ## Goal
 
-Create, update, or validate a Figma-to-HTML visual single source of truth (SSOT) bundle for the active Spec Kit feature. The HTML bundle defines visual requirements and acceptance surfaces by preserving Figma traceability, source coverage, component-instance-state granularity, page-level composition, assets, responsive behavior, and known gaps.
+Create, update, or validate a Figma-to-HTML visual single source of truth (SSOT) bundle for the active Spec Kit feature. The HTML bundle defines visual requirements and acceptance surfaces by preserving Figma traceability, source coverage, component-state granularity, page-level composition, assets, responsive behavior, and known gaps.
 
 Default output directory:
 
@@ -53,11 +53,11 @@ component instance + state + content sample + container constraint + viewport
 
 Use this hierarchy:
 
-- Component-instance-state: minimum runnable screenshot and comparison unit for tokens, local layout, states, overflow, and local interaction surfaces.
+- Component-state: minimum runnable screenshot and comparison unit for tokens, local layout, states, overflow, and local interaction surfaces.
 - Section: composition unit for spacing, ordering, alignment, and local responsive behavior across multiple component instances.
 - Page: final release gate for information completeness, cross-section layout, first-viewport experience, scrolling, and target runtime acceptance.
 
-Component-level acceptance cannot replace page-level acceptance. Page-level acceptance cannot replace required component-instance-state coverage.
+Component-level acceptance cannot replace page-level acceptance. Page-level acceptance cannot replace required component-state coverage.
 
 ## Context Loading
 
@@ -105,7 +105,7 @@ data-required="true"
 
 5. Preserve design tokens and visual facts in CSS custom properties or documented token mappings when available. Record unmapped tokens as gaps instead of silently flattening them.
 6. Export or reference assets through `assets-manifest.json`; do not embed untraceable base64 assets unless the source ref and checksum are recorded.
-7. Capture target runtime screenshots for every required component-instance-state, section, and page surface across the declared viewport set.
+7. Capture target runtime screenshots for every required component-state, section, and page surface across the declared viewport set.
 8. Compare Figma and HTML screenshots when tooling is available. Record thresholds, accepted exceptions, and blocking difference categories in `coverage-report.md`.
 9. Validate the HTML SSOT bundle before reporting readiness:
 
@@ -126,20 +126,11 @@ python .specify/extensions/intake/scripts/python/validate_html_ssot.py <figma2ht
 
 3. The validator confirms required bundle artifacts exist and are internally consistent:
    - every required Figma node is covered by `figma-map.json` or recorded as an accepted exclusion
-   - every required component-instance-state has a runnable HTML selector, viewport, content sample, container constraint, and screenshot
+   - every required component-state has a runnable HTML selector, viewport, content sample, container constraint, and screenshot
    - every required section and page has a runnable HTML selector, viewport coverage, and screenshot
    - every referenced asset appears in `assets-manifest.json` with source refs and checksum
    - every required HTML element has a stable Figma source ref
-4. Apply these blocker codes when validation fails:
-   - `HTML_SSOT_SOURCE_INTAKE_BLOCKED`
-   - `HTML_SSOT_REQUIRED_ARTIFACT_MISSING`
-   - `HTML_SSOT_FIGMA_NODE_COVERAGE_INCOMPLETE`
-   - `HTML_SSOT_COMPONENT_STATE_COVERAGE_INCOMPLETE`
-   - `HTML_SSOT_PAGE_COVERAGE_INCOMPLETE`
-   - `HTML_SSOT_ASSET_TRACEABILITY_INCOMPLETE`
-   - `HTML_SSOT_VIEWPORT_CAPTURE_INCOMPLETE`
-   - `HTML_SSOT_VISUAL_DIFF_BLOCKED`
-   - `HTML_SSOT_KNOWN_GAP_UNRESOLVED`
+4. Report blocker codes exactly as emitted by `scripts/python/validate_html_ssot.py`; do not infer or rewrite the validator output.
 5. Mark readiness:
    - `PASS` only when required artifacts exist, required coverage is complete, screenshots are captured, blockers are empty, and accepted exceptions are explicit.
    - `BLOCKED` when any blocker code is present or any required coverage item lacks traceable evidence.
@@ -152,7 +143,7 @@ Use this precedence when sources disagree:
 2. `figma-map.json`, `assets-manifest.json`, and screenshot captures are canonical for HTML SSOT traceability and runtime coverage.
 3. `coverage-report.md` and `known-gaps.md` explain readiness, accepted exceptions, and blockers for human review.
 
-Do not promote HTML as the visual SSOT when upstream Figma evidence is incomplete or when coverage cannot prove the minimum component-instance-state and page-level gates.
+Do not promote HTML as the visual SSOT when upstream Figma evidence is incomplete or when coverage cannot prove the minimum component-state and page-level gates.
 
 ## Report
 
@@ -162,7 +153,7 @@ Return:
 - output or validated directory
 - Figma source scope and upstream visual-design intake readiness
 - required viewport set
-- component-instance-state, section, and page coverage counts
+- component-state, section, and page coverage counts
 - asset count and unresolved asset gaps
 - screenshot and visual-diff status
 - readiness result

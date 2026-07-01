@@ -4,6 +4,7 @@ artifacts:
   base_dir: "specs/{feature}/intake"
   visual_design_dir: "visual-design"
   figma2htmlssot_dir: "figma2htmlssot"
+  structured_ir_dir: "structured-ir"
   prd_dir: "prd"
   test_cases_dir: "test-cases"
   prd_source_manifest: "source-manifest.yaml"
@@ -20,10 +21,16 @@ artifacts:
   html_ssot_known_gaps: "known-gaps.md"
   html_ssot_screenshots_dir: "screenshots"
   html_ssot_validator: "scripts/python/validate_html_ssot.py"
+  structured_ir: "structured-ir.yaml"
+  structured_ir_assertions: "ir-assertions.yaml"
+  structured_ir_evidence_packet: "ir-evidence-packet.md"
+  structured_ir_validator: "scripts/python/validate_structured_ir_intake.py"
   prd_contract: "templates/intake-prd-contract.md"
   prd_evidence_packet_template: "templates/intake-prd-evidence-packet-template.md"
   visual_design_contract: "templates/intake-visual-design-contract.md"
   visual_design_evidence_packet_template: "templates/intake-visual-design-evidence-packet-template.md"
+  structured_ir_contract: "templates/intake-structured-ir-contract.md"
+  structured_ir_evidence_packet_template: "templates/intake-structured-ir-evidence-packet-template.md"
   test_cases_contract: "templates/intake-test-cases-contract.md"
   test_cases_evidence_packet_template: "templates/intake-test-cases-evidence-packet-template.md"
   schemas_dir: "templates/schemas"
@@ -38,6 +45,8 @@ artifacts:
   html_ssot_figma_map_schema: "templates/schemas/figma-map.schema.json"
   html_ssot_assets_manifest_schema: "templates/schemas/assets-manifest.schema.json"
   html_ssot_coverage_schema: "templates/schemas/html-ssot-coverage.schema.json"
+  structured_ir_schema: "templates/schemas/structured-ir.schema.json"
+  structured_ir_assertions_schema: "templates/schemas/ir-assertions.schema.json"
   metadata_glob: "figma-metadata.part-*.xml"
   metadata_index: "figma-metadata.index.yaml"
   node_inventory: "figma-node-inventory.yaml"
@@ -65,6 +74,11 @@ readiness:
     - "high"
   require_source_integrity: true
   require_visual_requirements: true
+  require_structured_ir: true
+  require_structured_ir_source_refs: true
+  require_structured_ir_provider_evidence: true
+  require_structured_ir_ci_assertions: true
+  require_structured_ir_provider_product_gap_separation: true
   require_visual_source_refs: true
   require_fidelity_rules_applied: true
   require_visual_parity_plan: true
