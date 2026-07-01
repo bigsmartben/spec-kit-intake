@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-kit-intake.local/schemas/ir-assertions.schema.json",
+  "title": "Structured UI Acceptance IR Assertions",
+  "type": "object",
+  "required": [
+    "assertions_complete",
+    "assertion_count",
+    "ci_assertions_complete",
+    "assertions"
+  ],
+  "properties": {
+    "assertions_complete": { "type": "boolean" },
+    "assertion_count": { "type": "integer", "minimum": 0 },
+    "ci_assertions_complete": { "type": "boolean" },
+    "blocker_lint_errors": { "type": "array" },
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "ir_refs",
+          "assertion_type",
+          "acceptance_intent",
+          "expected",
+          "evidence_refs",
+          "ci_suitability",
+          "status",
+          "blockers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^IRA-[A-Za-z0-9._:-]+$"
+          },
+          "ir_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "assertion_type": {
+            "enum": [
+              "visible",
+              "hidden",
+              "enabled",
+              "disabled",
+              "contains_text",
+              "role",
+              "aria",
+              "token",
+              "relation",
+              "state",
+              "viewport"
+            ]
+          },
+          "acceptance_intent": { "type": "string", "minLength": 1 },
+          "expected": {
+            "type": ["string", "object", "array", "boolean", "number"],
+            "minLength": 1
+          },
+          "evidence_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "ci_suitability": { "enum": ["ci_low_cost", "manual_review", "blocked"] },
+          "status": { "enum": ["ready", "blocked", "reference_only", "out_of_scope"] },
+          "blockers": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/blocker_code" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "blocker_code": {
+      "enum": [
+        "IR_SOURCE_INTAKE_BLOCKED",
+        "IR_REQUIRED_ARTIFACT_MISSING",
+        "IR_SCHEMA_INVALID",
+        "IR_INTAKE_INCOMPLETE",
+        "IR_PROVIDER_EVIDENCE_MISSING",
+        "IR_PRODUCT_AMBIGUITY_UNRESOLVED",
+        "IR_ASSERTION_COVERAGE_INCOMPLETE",
+        "IR_LOCATOR_STRATEGY_INVALID",
+        "IR_DOWNSTREAM_OWNERSHIP_LEAK",
+        "IR_READY_WITHOUT_EVIDENCE"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

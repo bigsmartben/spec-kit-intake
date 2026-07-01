@@ -41,6 +41,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import os
+          import json
           import re
           import zipfile
           from pathlib import Path
@@ -114,8 +115,35 @@ jobs:
           if forbidden:
               raise SystemExit(f"artifact contains forbidden entries: {forbidden[:10]}")
 
+          repository = os.environ["GITHUB_REPOSITORY"]
+          source_commit = os.environ["GITHUB_SHA"]
+          if tag_version:
+              download_url = f"https://github.com/{repository}/archive/refs/tags/v{version}.zip"
+          else:
+              download_url = f"https://github.com/{repository}/archive/{source_commit}.zip"
+          provenance = {
+              "repository_url": f"https://github.com/{repository}",
+              "release_version": version,
+              "source_commit_sha": source_commit,
+              "download_url": download_url,
+              "validation_evidence": {
+                  "workflow": os.environ["GITHUB_WORKFLOW"],
+                  "run_id": os.environ["GITHUB_RUN_ID"],
+                  "artifact_name": zip_name,
+                  "manifest_version": manifest_version,
+                  "required_entries_verified": sorted(required),
+                  "forbidden_prefixes_checked": list(forbidden_prefixes),
+              },
+          }
+          provenance_name = "release-provenance.json"
+          Path(provenance_name).write_text(
+              json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write(f"zip_name={zip_name}\n")
+              output.write(f"provenance_name={provenance_name}\n")
           PY
 
       - name: Upload verified artifact
@@ -123,3 +151,9 @@ jobs:
         with:
           name: ${{ steps.artifact.outputs.zip_name }}
           path: ${{ steps.artifact.outputs.zip_name }}
+
+      - name: Upload release provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-provenance
+          path: ${{ steps.artifact.outputs.provenance_name }}

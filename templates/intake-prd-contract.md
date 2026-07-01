@@ -18,8 +18,9 @@ Required source fields:
 - source_files:
   - path:
   - mime_type:
-  - byte_size:
-  - sha256:
+  - byte_size: required for local files or captured snapshots
+  - sha256: required for local files or captured snapshots
+  - checksum_status: verified|unavailable|not_applicable
   - role: original|export|attachment|snapshot
 - source_integrity_complete:
 - captured_at:
@@ -32,7 +33,7 @@ Source-specific requirements:
 - Markdown or text PRDs must record heading coverage, linked asset refs, and parsed section coverage.
 - PDF or exported docs must record original file hash, page count, processed page count, and text extraction status.
 - URL, issue, or epic sources must record stable URL, retrieval timestamp, visible title, author or owner, and snapshot refs; unavailable values must be represented by `snapshot_status` and `integrity_gap_reason`.
-- Remote source refs may use a stable URL as `source_files[].path`; when no local snapshot exists, record `retrieval_metadata`, `snapshot_status`, and `integrity_gap_reason` instead of marking source integrity complete.
+- Remote source refs may use a stable URL as `source_files[].path`; when no local snapshot exists, record `retrieval_metadata`, `snapshot_status`, `integrity_gap_reason`, and `checksum_status: unavailable|not_applicable` instead of marking source integrity complete.
 - Mixed stakeholder notes must record each source separately and mark conflicting or unsupported claims.
 
 ## Vertical Scenario Coverage

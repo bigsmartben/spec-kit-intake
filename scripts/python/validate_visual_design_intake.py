@@ -173,6 +173,8 @@ def validate_visual_contract(
         "page_or_frame_count": manifest.get("page_or_frame_count"),
         "processed_count": manifest.get("processed_count"),
         "extraction_scope": manifest.get("extraction_scope"),
+        "snapshot_status": manifest.get("snapshot_status"),
+        "integrity_gap_reason": manifest.get("integrity_gap_reason"),
     }
 
     required_manifest_fields = [
@@ -219,22 +221,33 @@ def validate_source_files(
         return
 
     validated_files: list[dict[str, Any]] = []
+    manifest_remote_gap = (
+        str(manifest.get("snapshot_status") or "").strip() in {"not_available", "not_required"}
+        and manifest.get("integrity_gap_reason") not in (None, "", [], {})
+    )
     for source_file in source_files:
         if not isinstance(source_file, dict):
             blocker_codes.append(BLOCKERS["VISUAL_SOURCE_FILE_MISSING"])
             continue
 
         required_source_file_fields = ["path", "mime_type", "byte_size", "sha256", "role"]
-        missing_source_file_fields = [
-            field for field in required_source_file_fields if field not in source_file
-        ]
         rel_path = str(source_file.get("path") or "").strip()
+        remote_ref = is_remote_ref(rel_path)
+        remote_gap_fields = {"byte_size", "sha256"} if remote_ref and manifest_remote_gap else set()
+        missing_source_file_fields = [
+            field
+            for field in required_source_file_fields
+            if field not in source_file and field not in remote_gap_fields
+        ]
         expected = str(source_file.get("sha256") or "").replace("sha256:", "").strip()
         file_detail: dict[str, Any] = {
             "path": rel_path,
             "exists": False,
             "sha256_match": None,
             "missing_required_fields": missing_source_file_fields,
+            "checksum_status": source_file.get("checksum_status"),
+            "snapshot_status": manifest.get("snapshot_status"),
+            "integrity_gap_reason": manifest.get("integrity_gap_reason"),
         }
 
         if missing_source_file_fields:
@@ -245,7 +258,7 @@ def validate_source_files(
             validated_files.append(file_detail)
             continue
 
-        if is_remote_ref(rel_path):
+        if remote_ref:
             file_detail["exists"] = True
             file_detail["remote_ref"] = True
             validated_files.append(file_detail)
@@ -722,7 +735,10 @@ def validate_evidence_packet(
     if packet_status["warnings"]:
         warnings.extend(packet_status["warnings"])
     if packet_status["errors"]:
-        blocker_codes.append(BLOCKERS["VISUAL_READY_WITHOUT_EVIDENCE"])
+        if visual_gate_active:
+            blocker_codes.append(BLOCKERS["VISUAL_READY_WITHOUT_EVIDENCE"])
+        else:
+            blocker_codes.append(BLOCKERS["READY_WITHOUT_COMPLETENESS_PROOF"])
         return
 
     if packet_status["ready_gate"] != "PASS":

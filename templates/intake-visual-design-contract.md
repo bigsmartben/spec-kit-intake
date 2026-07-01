@@ -19,8 +19,9 @@ Required source fields:
 - source_files:
   - path:
   - mime_type:
-  - byte_size:
-  - sha256:
+  - byte_size: required for local files or captured snapshots
+  - sha256: required for local files or captured snapshots
+  - checksum_status: verified|unavailable|not_applicable
   - role: original|rendered_page|screenshot|asset|markdown
 - source_integrity_complete:
 - captured_at:
@@ -35,6 +36,7 @@ Source-specific requirements:
 - PDF sources must record original PDF hash, page count, processed page count, rendered page references, and text extraction status.
 - Markdown sources must record original Markdown hash, embedded or linked asset refs, heading structure, and design-note parsing status.
 - Figma sources must additionally satisfy the Figma provider contract below.
+- Remote source refs may use `http://`, `https://`, or `figma://` as `source_files[].path`; when no local snapshot exists, record retrieval metadata, `snapshot_status`, `integrity_gap_reason`, and `checksum_status: unavailable|not_applicable` instead of marking source integrity complete.
 
 ## Fidelity Profile
 

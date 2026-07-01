@@ -4,7 +4,7 @@ extension:
   id: intake
   name: "Intake"
   version: "0.1.3"
-  description: "Normalize PRD, design, HTML SSOT, and test-case evidence into SDD-ready intake artifacts"
+  description: "Normalize PRD, design, HTML SSOT, structured IR, and test-case evidence into SDD-ready intake artifacts"
   author: "bigsmartben"
   repository: "https://github.com/bigsmartben/spec-kit-intake"
   homepage: "https://github.com/bigsmartben/spec-kit-intake"
@@ -26,6 +26,9 @@ provides:
     - name: "speckit.intake.figma2htmlssot"
       file: "commands/speckit.intake.figma2htmlssot.md"
       description: "Create or validate a Figma-derived HTML visual SSOT bundle with node, component-state, page, asset, viewport, and screenshot coverage"
+    - name: "speckit.intake.ir"
+      file: "commands/speckit.intake.ir.md"
+      description: "Create or validate structured UI acceptance IR for CI-friendly DOM, ARIA, token, state, locator, relation, and assertion checks"
     - name: "speckit.intake.prd"
       file: "commands/speckit.intake.prd.md"
       description: "Capture or validate PRD evidence and normalize product intent, scope, rules, and acceptance inputs for SDD workflows"
@@ -58,6 +61,7 @@ defaults:
     base_dir: "specs/{feature}/intake"
     visual_design_dir: "visual-design"
     figma2htmlssot_dir: "figma2htmlssot"
+    structured_ir_dir: "structured-ir"
     prd_dir: "prd"
     test_cases_dir: "test-cases"
     prd_source_manifest: "source-manifest.yaml"
@@ -74,10 +78,16 @@ defaults:
     html_ssot_known_gaps: "known-gaps.md"
     html_ssot_screenshots_dir: "screenshots"
     html_ssot_validator: "scripts/python/validate_html_ssot.py"
+    structured_ir: "structured-ir.yaml"
+    structured_ir_assertions: "ir-assertions.yaml"
+    structured_ir_evidence_packet: "ir-evidence-packet.md"
+    structured_ir_validator: "scripts/python/validate_structured_ir_intake.py"
     prd_contract: "templates/intake-prd-contract.md"
     prd_evidence_packet_template: "templates/intake-prd-evidence-packet-template.md"
     visual_design_contract: "templates/intake-visual-design-contract.md"
     visual_design_evidence_packet_template: "templates/intake-visual-design-evidence-packet-template.md"
+    structured_ir_contract: "templates/intake-structured-ir-contract.md"
+    structured_ir_evidence_packet_template: "templates/intake-structured-ir-evidence-packet-template.md"
     test_cases_contract: "templates/intake-test-cases-contract.md"
     test_cases_evidence_packet_template: "templates/intake-test-cases-evidence-packet-template.md"
     schemas_dir: "templates/schemas"
@@ -92,6 +102,8 @@ defaults:
     html_ssot_figma_map_schema: "templates/schemas/figma-map.schema.json"
     html_ssot_assets_manifest_schema: "templates/schemas/assets-manifest.schema.json"
     html_ssot_coverage_schema: "templates/schemas/html-ssot-coverage.schema.json"
+    structured_ir_schema: "templates/schemas/structured-ir.schema.json"
+    structured_ir_assertions_schema: "templates/schemas/ir-assertions.schema.json"
     metadata_glob: "figma-metadata.part-*.xml"
     metadata_index: "figma-metadata.index.yaml"
     node_inventory: "figma-node-inventory.yaml"
@@ -118,6 +130,11 @@ defaults:
       - "high"
     require_source_integrity: true
     require_visual_requirements: true
+    require_structured_ir: true
+    require_structured_ir_source_refs: true
+    require_structured_ir_provider_evidence: true
+    require_structured_ir_ci_assertions: true
+    require_structured_ir_provider_product_gap_separation: true
     require_visual_source_refs: true
     require_fidelity_rules_applied: true
     require_visual_parity_plan: true
@@ -129,3 +146,13 @@ defaults:
     fail_on_unbounded_inference_for_figma: true
     fail_on_unsupported_visual_claims: true
     fail_on_blocker_lint_errors: true
+  capture:
+    preserve_original_sources: true
+    source_file_dir: "source-files"
+    prd_intake_file: "prd-intake.yaml"
+    visual_requirements_file: "visual-requirements.yaml"
+    test_case_intake_file: "test-case-intake.yaml"
+    shard_prefix: "figma-metadata.part-"
+    preserve_raw_metadata: true
+    allow_screenshot_only_intake: true
+    default_screenshot_level: "L0"

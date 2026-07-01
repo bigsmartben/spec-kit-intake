@@ -88,7 +88,11 @@
             ]
           },
           "requirement": { "type": "string", "minLength": 1 },
-          "source_refs": { "type": "array", "minItems": 1 },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
           "evidence_type": {
             "enum": ["observed", "inferred", "candidate", "unsupported", "missing", "out_of_scope"]
           },
@@ -105,7 +109,10 @@
               "properties": {
                 "signal": { "type": "string", "minLength": 1 },
                 "weight": { "type": "number" },
-                "source_refs": { "type": "array" }
+                "source_refs": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                }
               },
               "additionalProperties": true
             }
@@ -122,12 +129,15 @@
             "type": "array",
             "items": { "type": "string", "minLength": 1 }
           },
-          "blocker_code": { "type": "string", "minLength": 1 },
+          "blocker_code": { "$ref": "#/$defs/blocker_code" },
           "reason": { "type": "string", "minLength": 1 },
           "engineering_action": { "type": "string", "minLength": 1 },
           "acceptance_check": { "type": "string", "minLength": 1 },
           "fidelity_level": { "enum": ["low", "medium", "high"] },
-          "blockers": { "type": "array" }
+          "blockers": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/blocker_code" }
+          }
         },
         "allOf": [
           {
@@ -184,13 +194,54 @@
               ],
               "properties": {
                 "downstream_use": { "const": "blocked" },
-                "blockers": { "type": "array", "minItems": 1 }
+                "blockers": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "$ref": "#/$defs/blocker_code" }
+                }
               }
             }
           }
         ],
         "additionalProperties": true
       }
+    }
+  },
+  "$defs": {
+    "blocker_code": {
+      "enum": [
+        "VISUAL_SOURCE_MANIFEST_MISSING",
+        "VISUAL_SOURCE_TYPE_UNSUPPORTED",
+        "VISUAL_FIDELITY_LEVEL_UNSUPPORTED",
+        "VISUAL_SOURCE_FILE_MISSING",
+        "VISUAL_SOURCE_HASH_MISMATCH",
+        "VISUAL_SOURCE_INTEGRITY_INCOMPLETE",
+        "VISUAL_REQUIREMENTS_MISSING",
+        "VISUAL_REQUIREMENTS_UNTRACEABLE",
+        "VISUAL_FIDELITY_RULES_MISSING",
+        "VISUAL_PARITY_PLAN_MISSING",
+        "VISUAL_READY_WITHOUT_EVIDENCE",
+        "VISUAL_EVIDENCE_PACKET_MISSING",
+        "VISUAL_BLOCKER_LINT_ERRORS",
+        "VISUAL_INFERENCE_CONTRACT_INVALID",
+        "VISUAL_SCHEMA_INVALID",
+        "FIGMA_RENDER_NODE_MISMATCH",
+        "FIGMA_HIDDEN_LAYER_POLLUTION",
+        "FIGMA_NON_INSTANCE_COMPONENT",
+        "FIGMA_PROTOTYPE_METADATA_MISSING",
+        "FIGMA_UNSUPPORTED_STATE_INFERENCE",
+        "FIGMA_BUSINESS_RULE_UNSUPPORTED",
+        "FIGMA_INTERACTION_CONFLICT",
+        "FIGMA_RESPONSIVE_RULE_MISSING",
+        "FIGMA_LOW_CONFIDENCE_CANDIDATE",
+        "FIGMA_RAW_METADATA_MISSING",
+        "FIGMA_RAW_METADATA_SUMMARY_SUBSTITUTION",
+        "FIGMA_RAW_METADATA_TRUNCATED",
+        "FIGMA_SELECTED_SUBTREE_INCOMPLETE",
+        "FIGMA_METADATA_INDEX_MISSING",
+        "FIGMA_METADATA_PARITY_FAILED",
+        "FIGMA_READY_WITHOUT_COMPLETENESS_PROOF"
+      ]
     }
   },
   "additionalProperties": true

@@ -19,7 +19,7 @@
     "ready_gate": { "enum": ["PASS", "BLOCKED"] },
     "blockers": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "$ref": "#/$defs/blocker_code" }
     },
     "required_nodes_total": { "type": "integer", "minimum": 0 },
     "required_nodes_covered": { "type": "integer", "minimum": 0 },
@@ -29,6 +29,22 @@
     "viewport_capture_complete": { "type": "boolean" },
     "visual_diff_status": { "enum": ["pass", "blocked", "not_applicable"] },
     "accepted_exceptions": { "type": "array" }
+  },
+  "$defs": {
+    "blocker_code": {
+      "enum": [
+        "HTML_SSOT_SOURCE_INTAKE_BLOCKED",
+        "HTML_SSOT_REQUIRED_ARTIFACT_MISSING",
+        "HTML_SSOT_FIGMA_NODE_COVERAGE_INCOMPLETE",
+        "HTML_SSOT_COMPONENT_STATE_COVERAGE_INCOMPLETE",
+        "HTML_SSOT_PAGE_COVERAGE_INCOMPLETE",
+        "HTML_SSOT_ASSET_TRACEABILITY_INCOMPLETE",
+        "HTML_SSOT_VIEWPORT_CAPTURE_INCOMPLETE",
+        "HTML_SSOT_VISUAL_DIFF_BLOCKED",
+        "HTML_SSOT_KNOWN_GAP_UNRESOLVED",
+        "HTML_SSOT_SCHEMA_INVALID"
+      ]
+    }
   },
   "additionalProperties": true
 }

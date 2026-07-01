@@ -28,7 +28,10 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/source_file" }
     },
-    "source_details": { "type": "object" }
+    "source_details": { "type": "object" },
+    "retrieval_metadata": { "type": "object" },
+    "snapshot_status": { "enum": ["captured", "not_available", "not_required"] },
+    "integrity_gap_reason": { "type": "string", "minLength": 1 }
   },
   "allOf": [
     {
@@ -112,21 +115,70 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "source_files": {
+            "contains": {
+              "type": "object",
+              "properties": {
+                "path": { "pattern": "^(https?://|figma://)" }
+              },
+              "required": ["path"]
+            }
+          }
+        },
+        "required": ["source_files"]
+      },
+      "then": { "required": ["snapshot_status", "integrity_gap_reason"] }
+    },
+    {
+      "if": {
+        "properties": {
+          "snapshot_status": { "enum": ["not_available", "not_required"] }
+        },
+        "required": ["snapshot_status"]
+      },
+      "then": { "required": ["integrity_gap_reason"] }
     }
   ],
   "$defs": {
     "source_file": {
       "type": "object",
-      "required": ["path", "mime_type", "byte_size", "sha256", "role"],
+      "required": ["path", "mime_type", "role"],
       "properties": {
         "path": { "type": "string", "minLength": 1 },
         "mime_type": { "type": "string", "minLength": 1 },
         "byte_size": { "type": "integer", "minimum": 0 },
         "sha256": { "type": "string", "minLength": 1 },
+        "checksum_status": { "enum": ["verified", "unavailable", "not_applicable"] },
         "role": {
           "enum": ["original", "rendered_page", "screenshot", "asset", "markdown"]
         }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "path": { "pattern": "^(https?://|figma://)" }
+            },
+            "required": ["path"]
+          },
+          "then": {
+            "anyOf": [
+              { "required": ["byte_size", "sha256"] },
+              {
+                "required": ["checksum_status"],
+                "properties": {
+                  "checksum_status": { "enum": ["unavailable", "not_applicable"] }
+                }
+              }
+            ]
+          },
+          "else": { "required": ["byte_size", "sha256"] }
+        }
+      ],
       "additionalProperties": true
     }
   },

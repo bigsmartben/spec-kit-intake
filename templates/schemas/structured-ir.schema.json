@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-kit-intake.local/schemas/structured-ir.schema.json",
+  "title": "Structured UI Acceptance IR",
+  "type": "object",
+  "required": [
+    "ir_complete",
+    "ir_item_count",
+    "source_refs_complete",
+    "provider_evidence_complete",
+    "product_ambiguities_recorded",
+    "downstream_ownership_free",
+    "items"
+  ],
+  "properties": {
+    "ir_complete": { "type": "boolean" },
+    "ir_item_count": { "type": "integer", "minimum": 0 },
+    "source_refs_complete": { "type": "boolean" },
+    "provider_evidence_complete": { "type": "boolean" },
+    "product_ambiguities_recorded": { "type": "boolean" },
+    "downstream_ownership_free": { "type": "boolean" },
+    "product_ambiguities": { "type": "array" },
+    "blocker_lint_errors": { "type": "array" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source_refs",
+          "page",
+          "region",
+          "role",
+          "state",
+          "viewport",
+          "locator",
+          "expectations",
+          "acceptance_intent",
+          "evidence_type",
+          "confidence",
+          "status",
+          "blockers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^IR-[A-Za-z0-9._:-]+$"
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "des_refs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "visual_requirement_refs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "html_ssot_refs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "page": { "type": "string", "minLength": 1 },
+          "region": { "type": "string", "minLength": 1 },
+          "role": { "type": "string", "minLength": 1 },
+          "state": { "type": "string", "minLength": 1 },
+          "viewport": { "type": "string", "minLength": 1 },
+          "locator": {
+            "type": "object",
+            "required": ["strategy", "value", "implementation_owned"],
+            "properties": {
+              "strategy": {
+                "enum": [
+                  "role",
+                  "text",
+                  "label",
+                  "aria-label",
+                  "semantic-region",
+                  "source-ref",
+                  "visual-anchor",
+                  "test-id-candidate"
+                ]
+              },
+              "value": { "type": "string", "minLength": 1 },
+              "implementation_owned": { "const": false }
+            },
+            "additionalProperties": true
+          },
+          "expectations": {
+            "type": "object",
+            "minProperties": 1,
+            "properties": {
+              "dom": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "aria": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "design_tokens": { "type": "array" },
+              "relations": { "type": "array" },
+              "state": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "content": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            },
+            "additionalProperties": true
+          },
+          "acceptance_intent": { "type": "string", "minLength": 1 },
+          "evidence_type": {
+            "enum": ["observed", "inferred", "candidate", "unsupported", "missing", "out_of_scope"]
+          },
+          "confidence": { "enum": ["low", "medium", "high"] },
+          "status": { "enum": ["ready", "blocked", "reference_only", "out_of_scope"] },
+          "blockers": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/blocker_code" }
+          },
+          "missing_evidence": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "ambiguity_refs": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "blocker_code": {
+      "enum": [
+        "IR_SOURCE_INTAKE_BLOCKED",
+        "IR_REQUIRED_ARTIFACT_MISSING",
+        "IR_SCHEMA_INVALID",
+        "IR_INTAKE_INCOMPLETE",
+        "IR_PROVIDER_EVIDENCE_MISSING",
+        "IR_PRODUCT_AMBIGUITY_UNRESOLVED",
+        "IR_ASSERTION_COVERAGE_INCOMPLETE",
+        "IR_LOCATOR_STRATEGY_INVALID",
+        "IR_DOWNSTREAM_OWNERSHIP_LEAK",
+        "IR_READY_WITHOUT_EVIDENCE"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

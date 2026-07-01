@@ -149,6 +149,8 @@ def validate_source_manifest(
         "source_integrity_complete": manifest.get("source_integrity_complete"),
         "captured_at": manifest.get("captured_at"),
         "capture_method": manifest.get("capture_method"),
+        "snapshot_status": manifest.get("snapshot_status"),
+        "integrity_gap_reason": manifest.get("integrity_gap_reason"),
         "missing_required_fields": missing_manifest_fields,
     }
 
@@ -196,21 +198,32 @@ def validate_source_files(
         return
 
     validated_files: list[dict[str, Any]] = []
+    manifest_remote_gap = (
+        str(manifest.get("snapshot_status") or "").strip() in {"not_available", "not_required"}
+        and non_empty(manifest.get("integrity_gap_reason"))
+    )
     for source_file in source_files:
         if not isinstance(source_file, dict):
             blocker_codes.append(missing_file_code)
             continue
 
-        missing_source_file_fields = [
-            field for field in required_source_file_fields if field not in source_file
-        ]
         rel_path = str(source_file.get("path") or "").strip()
+        remote_ref = is_remote_ref(rel_path)
+        remote_gap_fields = {"byte_size", "sha256"} if remote_ref and manifest_remote_gap else set()
+        missing_source_file_fields = [
+            field
+            for field in required_source_file_fields
+            if field not in source_file and field not in remote_gap_fields
+        ]
         expected = str(source_file.get("sha256") or "").replace("sha256:", "").strip()
         file_detail: dict[str, Any] = {
             "path": rel_path,
             "exists": False,
             "sha256_match": None,
             "missing_required_fields": missing_source_file_fields,
+            "checksum_status": source_file.get("checksum_status"),
+            "snapshot_status": manifest.get("snapshot_status"),
+            "integrity_gap_reason": manifest.get("integrity_gap_reason"),
         }
 
         if missing_source_file_fields:
@@ -221,7 +234,7 @@ def validate_source_files(
             validated_files.append(file_detail)
             continue
 
-        if is_remote_ref(rel_path):
+        if remote_ref:
             file_detail["exists"] = True
             file_detail["remote_ref"] = True
             validated_files.append(file_detail)
@@ -335,20 +348,6 @@ def parse_evidence_packet_status(evidence_text: str) -> dict[str, Any]:
         if not non_empty(metadata.get("generated_at")):
             result["errors"].append("evidence packet generated_at must be populated")
         result["ready_gate"] = ready_gate
-        return result
-
-    ready_match = re.search(
-        r"^\s*[-*]?\s*ready[_ ]gate:\s*(PASS|BLOCKED)\s*$",
-        text,
-        re.IGNORECASE | re.MULTILINE,
-    )
-    if ready_match:
-        ready_gate = ready_match.group(1).upper()
-        result["ready_gate"] = ready_gate
-        result["metadata"] = {"ready_gate": ready_gate, "blockers": []}
-        result["warnings"].append(
-            "evidence packet uses legacy Markdown ready_gate; add YAML front matter metadata"
-        )
         return result
 
     result["errors"].append("evidence packet readiness metadata not found")
