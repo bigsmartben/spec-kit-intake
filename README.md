@@ -103,7 +103,7 @@ specify extension add --dev C:/Users/24598/Documents/github/spec-kit-intake
 From a Spec Kit project:
 
 ```bash
-specify extension add intake --from https://github.com/bigsmartben/spec-kit-intake/archive/refs/tags/v0.1.3.zip
+specify extension add intake --from https://github.com/bigsmartben/spec-kit-intake/archive/refs/tags/v0.1.4.zip
 ```
 
 Release artifacts must include source-backed provenance for the `bigsmartben/spec-kit` integration fork. The release workflow uploads `release-provenance.json` with:

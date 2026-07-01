@@ -3,7 +3,7 @@
 extension:
   id: intake
   name: "Intake"
-  version: "0.1.3"
+  version: "0.1.4"
   description: "Normalize PRD, design, HTML SSOT, structured IR, and test-case evidence into SDD-ready intake artifacts"
   author: "bigsmartben"
   repository: "https://github.com/bigsmartben/spec-kit-intake"

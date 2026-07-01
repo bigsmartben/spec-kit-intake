@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.1.4] - 2026-07-01
+
 ### Added
 
 - Added `/speckit.intake.ir` for structured UI acceptance IR with CI-friendly DOM, ARIA, token, state, locator, relation, and assertion evidence.
