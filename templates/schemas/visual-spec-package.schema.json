@@ -1,22 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://spec-kit-intake.local/schemas/structured-ir.schema.json",
-  "title": "Structured UI Acceptance IR",
+  "$id": "https://spec-kit-intake.local/schemas/visual-spec-package.schema.json",
+  "title": "Visual Spec Package",
   "type": "object",
   "required": [
-    "ir_complete",
-    "ir_item_count",
+    "visual_spec_package_complete",
+    "visual_spec_item_count",
     "source_refs_complete",
     "provider_evidence_complete",
+    "resources_traceable_to_design_source",
     "product_ambiguities_recorded",
     "downstream_ownership_free",
     "items"
   ],
   "properties": {
-    "ir_complete": { "type": "boolean" },
-    "ir_item_count": { "type": "integer", "minimum": 0 },
+    "visual_spec_package_complete": { "type": "boolean" },
+    "visual_spec_item_count": { "type": "integer", "minimum": 0 },
     "source_refs_complete": { "type": "boolean" },
     "provider_evidence_complete": { "type": "boolean" },
+    "resources_traceable_to_design_source": { "type": "boolean" },
     "product_ambiguities_recorded": { "type": "boolean" },
     "downstream_ownership_free": { "type": "boolean" },
     "product_ambiguities": { "type": "array" },
@@ -45,7 +47,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^IR-[A-Za-z0-9._:-]+$"
+            "pattern": "^VS-[A-Za-z0-9._:-]+$"
           },
           "source_refs": {
             "type": "array",
@@ -60,7 +62,7 @@
             "type": "array",
             "items": { "type": "string", "minLength": 1 }
           },
-          "html_ssot_refs": {
+          "preview_refs": {
             "type": "array",
             "items": { "type": "string", "minLength": 1 }
           },
@@ -129,16 +131,16 @@
   "$defs": {
     "blocker_code": {
       "enum": [
-        "IR_SOURCE_INTAKE_BLOCKED",
-        "IR_REQUIRED_ARTIFACT_MISSING",
-        "IR_SCHEMA_INVALID",
-        "IR_INTAKE_INCOMPLETE",
-        "IR_PROVIDER_EVIDENCE_MISSING",
-        "IR_PRODUCT_AMBIGUITY_UNRESOLVED",
-        "IR_ASSERTION_COVERAGE_INCOMPLETE",
-        "IR_LOCATOR_STRATEGY_INVALID",
-        "IR_DOWNSTREAM_OWNERSHIP_LEAK",
-        "IR_READY_WITHOUT_EVIDENCE"
+        "VISUAL_SPEC_SOURCE_INTAKE_BLOCKED",
+        "VISUAL_SPEC_REQUIRED_ARTIFACT_MISSING",
+        "VISUAL_SPEC_SCHEMA_INVALID",
+        "VISUAL_SPEC_INTAKE_INCOMPLETE",
+        "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING",
+        "VISUAL_SPEC_PRODUCT_AMBIGUITY_UNRESOLVED",
+        "VISUAL_SPEC_ASSERTION_COVERAGE_INCOMPLETE",
+        "VISUAL_SPEC_LOCATOR_STRATEGY_INVALID",
+        "VISUAL_SPEC_DOWNSTREAM_OWNERSHIP_LEAK",
+        "VISUAL_SPEC_READY_WITHOUT_EVIDENCE"
       ]
     }
   },

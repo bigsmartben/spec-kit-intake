@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import shutil
 import subprocess
@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "scripts" / "python" / "validate_visual_design_intake.py"
 PRD_VALIDATOR = ROOT / "scripts" / "python" / "validate_prd_intake.py"
 TEST_CASE_VALIDATOR = ROOT / "scripts" / "python" / "validate_test_cases_intake.py"
-HTML_SSOT_VALIDATOR = ROOT / "scripts" / "python" / "validate_html_ssot.py"
-STRUCTURED_IR_VALIDATOR = ROOT / "scripts" / "python" / "validate_structured_ir_intake.py"
+VISUAL_PREVIEWS_VALIDATOR = ROOT / "scripts" / "python" / "validate_visual_previews.py"
+VISUAL_SPEC_PACKAGE_VALIDATOR = ROOT / "scripts" / "python" / "validate_visual_spec_package.py"
 
 
 def write_visual_intake_fixture(intake: Path, source_type: str, fidelity: str, file_name: str):
@@ -308,114 +308,99 @@ def write_image_visual_intake_fixture(intake: Path):
     write_visual_intake_fixture(intake, "image", "low", "wireframe.png")
 
 
-def write_html_ssot_fixture(html_dir: Path):
+def write_visual_previews_fixture(html_dir: Path):
     visual_intake = html_dir.parent
     write_visual_intake_fixture(visual_intake, "figma", "high", "figma-source.txt")
     html_dir.mkdir(parents=True, exist_ok=True)
     screenshots = html_dir / "screenshots"
     screenshots.mkdir(exist_ok=True)
     (screenshots / "home-desktop.png").write_bytes(b"fake-png")
-    asset = html_dir / "logo.svg"
-    asset.write_text("<svg></svg>", encoding="utf-8")
 
-    import hashlib
-
-    digest = hashlib.sha256(asset.read_bytes()).hexdigest()
-    (html_dir / "visual-spec.html").write_text(
-        '<main data-figma-node-id="1" data-spec-role="home-page">'
-        '<button data-figma-node-id="2" data-acceptance-unit="component-state">Save</button>'
+    (html_dir / "component-matrix-preview.html").write_text(
+        '<main id="home-page" data-figma-node-id="1" data-spec-role="home-page">'
+        '<button id="button-md-primary-default" data-preview-id="button-md-primary-default" '
+        'data-figma-node-id="2" data-acceptance-unit="component-state">Save</button>'
         "</main>",
         encoding="utf-8",
     )
-    (html_dir / "figma-map.json").write_text(
-        json.dumps(
-            {
-                "source_intake_refs": ["../visual-requirements.yaml#VR-001"],
-                "mappings": [
-                    {
-                        "figma_node_id": "1",
-                        "selector": '[data-figma-node-id="1"]',
-                        "acceptance_unit": "page",
-                        "required": True,
-                        "states": ["default"],
-                        "viewports": ["desktop"],
-                        "content_sample": "Home",
-                        "container_constraint": "page",
-                    },
-                    {
-                        "figma_node_id": "2",
-                        "selector": '[data-figma-node-id="2"]',
-                        "acceptance_unit": "component-state",
-                        "required": True,
-                        "states": ["default"],
-                        "viewports": ["desktop"],
-                        "content_sample": "Save",
-                        "container_constraint": "header",
-                    },
-                ],
-            }
+    (html_dir / "component-coverage.yaml").write_text(
+        "\n".join(
+            [
+                "ready_gate: PASS",
+                "blockers: []",
+                "components:",
+                "  - id: component-button",
+                "    source_ref: figma://node/button-set",
+                "    name: Button",
+                "    required_dimensions:",
+                "      size: [md]",
+                "      tone: [primary]",
+                "      state: [default]",
+                "      icon: [none]",
+                "    covered:",
+                "      - size: md",
+                "        tone: primary",
+                "        state: default",
+                "        icon: none",
+                "        source_ref: figma://node/2",
+                "        visual_spec_ref: ../visual-spec-package/visual-spec.yaml#VS-home-save-default",
+                "        preview_ref: component-matrix-preview.html#button-md-primary-default",
+                "        screenshot_refs:",
+                "          - screenshots/home-desktop.png",
+                "    missing: []",
+                "",
+            ]
         ),
         encoding="utf-8",
     )
-    (html_dir / "assets-manifest.json").write_text(
-        json.dumps(
-            {
-                "assets": [
-                    {
-                        "id": "asset-logo",
-                        "path": "logo.svg",
-                        "role": "brand",
-                        "source_refs": ["figma://node/logo"],
-                        "sha256": digest,
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
-    (html_dir / "coverage-report.md").write_text(
-        "---\n"
+    (html_dir / "viewport-coverage.yaml").write_text(
         "ready_gate: PASS\n"
         "blockers: []\n"
-        "required_nodes_total: 2\n"
-        "required_nodes_covered: 2\n"
-        "component_state_coverage_complete: true\n"
-        "page_coverage_complete: true\n"
-        "asset_traceability_complete: true\n"
-        "viewport_capture_complete: true\n"
-        "visual_diff_status: pass\n"
-        "accepted_exceptions: []\n"
-        "---\n"
-        "# Coverage Report\n",
+        "viewports:\n"
+        "  - id: desktop\n"
+        "    width: 1440\n"
+        "    height: 900\n"
+        "    covered: true\n"
+        "    source_refs:\n"
+        "      - figma://node/1\n"
+        "    visual_spec_refs:\n"
+        "      - ../visual-spec-package/visual-spec.yaml#VS-home-save-default\n"
+        "    page_refs:\n"
+        "      - component-matrix-preview.html#home-page\n"
+        "    screenshot_refs:\n"
+        "      - screenshots/home-desktop.png\n"
+        "    visual_diff_status: pass\n",
         encoding="utf-8",
     )
     (html_dir / "known-gaps.md").write_text("# Known Gaps\n\nNone.\n", encoding="utf-8")
 
 
-def write_structured_ir_fixture(ir_dir: Path):
-    visual_intake = ir_dir.parent
+def write_visual_spec_package_fixture(package_dir: Path):
+    visual_intake = package_dir.parent
     write_visual_intake_fixture(visual_intake, "figma", "high", "figma-source.txt")
-    ir_dir.mkdir(parents=True, exist_ok=True)
+    package_dir.mkdir(parents=True, exist_ok=True)
 
-    (ir_dir / "structured-ir.yaml").write_text(
+    (package_dir / "visual-spec.yaml").write_text(
         "\n".join(
             [
-                "ir_complete: true",
-                "ir_item_count: 1",
+                "visual_spec_package_complete: true",
+                "visual_spec_item_count: 1",
                 "source_refs_complete: true",
                 "provider_evidence_complete: true",
+                "resources_traceable_to_design_source: true",
                 "product_ambiguities_recorded: true",
                 "downstream_ownership_free: true",
                 "product_ambiguities: []",
                 "blocker_lint_errors: []",
                 "items:",
-                "  - id: IR-home-save-default",
+                "  - id: VS-home-save-default",
                 "    source_refs:",
                 "      - figma://node/2",
                 "    visual_requirement_refs:",
                 "      - ../visual-requirements.yaml#VR-001",
-                "    html_ssot_refs:",
-                "      - ../figma2htmlssot/visual-spec.html#[data-figma-node-id='2']",
+                "    preview_refs:",
+                "      - ../previews/component-matrix-preview.html#button-md-primary-default",
+                "      - ../previews/component-coverage.yaml#component-button",
                 "    page: home",
                 "    region: header",
                 "    role: button",
@@ -447,7 +432,7 @@ def write_structured_ir_fixture(ir_dir: Path):
         encoding="utf-8",
     )
 
-    (ir_dir / "ir-assertions.yaml").write_text(
+    (package_dir / "visual-spec-assertions.yaml").write_text(
         "\n".join(
             [
                 "assertions_complete: true",
@@ -455,14 +440,14 @@ def write_structured_ir_fixture(ir_dir: Path):
                 "ci_assertions_complete: true",
                 "blocker_lint_errors: []",
                 "assertions:",
-                "  - id: IRA-home-save-visible",
-                "    ir_refs:",
-                "      - IR-home-save-default",
+                "  - id: VSA-home-save-visible",
+                "    visual_spec_refs:",
+                "      - VS-home-save-default",
                 "    assertion_type: visible",
                 "    acceptance_intent: Save control is visible and discoverable",
                 "    expected: true",
                 "    evidence_refs:",
-                "      - structured-ir.yaml#IR-home-save-default",
+                "      - visual-spec.yaml#VS-home-save-default",
                 "    ci_suitability: ci_low_cost",
                 "    status: ready",
                 "    blockers: []",
@@ -472,7 +457,7 @@ def write_structured_ir_fixture(ir_dir: Path):
         encoding="utf-8",
     )
 
-    (ir_dir / "ir-evidence-packet.md").write_text(
+    (package_dir / "visual-spec-evidence-packet.md").write_text(
         "---\n"
         "ready_gate: PASS\n"
         "blockers: []\n"
@@ -480,7 +465,7 @@ def write_structured_ir_fixture(ir_dir: Path):
         "extracted_item_count: 1\n"
         "generated_at: '2026-07-01T00:00:00Z'\n"
         "---\n"
-        "# Structured IR Evidence Packet\n",
+        "# Visual Spec Package Evidence Packet\n",
         encoding="utf-8",
     )
 
@@ -498,8 +483,8 @@ def test_manifest_loads_with_spec_kit_checkout():
         "from specify_cli.extensions import ExtensionManifest; "
         "m=ExtensionManifest(Path('extension.yml')); "
         "assert m.id == 'intake'; "
-        "assert len(m.commands) == 5; "
-        "assert {c['name'] for c in m.commands} == {'speckit.intake.visual-design', 'speckit.intake.figma2htmlssot', 'speckit.intake.ir', 'speckit.intake.prd', 'speckit.intake.test-cases'}; "
+        "assert len(m.commands) == 3; "
+        "assert {c['name'] for c in m.commands} == {'speckit.intake.visual-design', 'speckit.intake.prd', 'speckit.intake.test-cases'}; "
         "assert m.hooks"
     )
 
@@ -561,38 +546,36 @@ def test_readme_release_url_matches_extension_version():
     assert f"archive/refs/tags/v{version}.zip" in readme
 
 
-def test_html_ssot_schema_and_validator_paths_are_declared():
+def test_visual_previews_schema_and_validator_paths_are_declared():
     extension = ROOT / "extension.yml"
     config = ROOT / "config-template.yml"
     for document in (extension.read_text(encoding="utf-8-sig"), config.read_text(encoding="utf-8")):
-        assert "scripts/python/validate_html_ssot.py" in document
-        assert "templates/schemas/figma-map.schema.json" in document
-        assert "templates/schemas/assets-manifest.schema.json" in document
-        assert "templates/schemas/html-ssot-coverage.schema.json" in document
+        assert "scripts/python/validate_visual_previews.py" in document
+        assert "templates/intake-visual-previews-contract.md" in document
+        assert "templates/schemas/component-coverage.schema.json" in document
+        assert "templates/schemas/viewport-coverage.schema.json" in document
 
-    assert HTML_SSOT_VALIDATOR.exists()
-    assert (ROOT / "templates" / "schemas" / "figma-map.schema.json").exists()
-    assert (ROOT / "templates" / "schemas" / "assets-manifest.schema.json").exists()
-    assert (ROOT / "templates" / "schemas" / "html-ssot-coverage.schema.json").exists()
+    assert VISUAL_PREVIEWS_VALIDATOR.exists()
+    assert (ROOT / "templates" / "intake-visual-previews-contract.md").exists()
+    assert (ROOT / "templates" / "schemas" / "component-coverage.schema.json").exists()
+    assert (ROOT / "templates" / "schemas" / "viewport-coverage.schema.json").exists()
 
 
-def test_structured_ir_schema_and_validator_paths_are_declared():
+def test_visual_spec_package_schema_and_validator_paths_are_declared():
     extension = ROOT / "extension.yml"
     config = ROOT / "config-template.yml"
-    assert "commands/speckit.intake.ir.md" in extension.read_text(encoding="utf-8-sig")
     for document in (extension.read_text(encoding="utf-8-sig"), config.read_text(encoding="utf-8")):
-        assert "scripts/python/validate_structured_ir_intake.py" in document
-        assert "templates/intake-structured-ir-contract.md" in document
-        assert "templates/intake-structured-ir-evidence-packet-template.md" in document
-        assert "templates/schemas/structured-ir.schema.json" in document
-        assert "templates/schemas/ir-assertions.schema.json" in document
+        assert "scripts/python/validate_visual_spec_package.py" in document
+        assert "templates/intake-visual-spec-package-contract.md" in document
+        assert "templates/intake-visual-spec-package-evidence-packet-template.md" in document
+        assert "templates/schemas/visual-spec-package.schema.json" in document
+        assert "templates/schemas/visual-spec-assertions.schema.json" in document
 
-    assert STRUCTURED_IR_VALIDATOR.exists()
-    assert (ROOT / "commands" / "speckit.intake.ir.md").exists()
-    assert (ROOT / "templates" / "intake-structured-ir-contract.md").exists()
-    assert (ROOT / "templates" / "intake-structured-ir-evidence-packet-template.md").exists()
-    assert (ROOT / "templates" / "schemas" / "structured-ir.schema.json").exists()
-    assert (ROOT / "templates" / "schemas" / "ir-assertions.schema.json").exists()
+    assert VISUAL_SPEC_PACKAGE_VALIDATOR.exists()
+    assert (ROOT / "templates" / "intake-visual-spec-package-contract.md").exists()
+    assert (ROOT / "templates" / "intake-visual-spec-package-evidence-packet-template.md").exists()
+    assert (ROOT / "templates" / "schemas" / "visual-spec-package.schema.json").exists()
+    assert (ROOT / "templates" / "schemas" / "visual-spec-assertions.schema.json").exists()
 
 
 def test_validator_blocks_missing_directory():
@@ -637,18 +620,18 @@ def test_test_case_validator_blocks_missing_directory():
     assert "TEST_EVIDENCE_PACKET_MISSING" in result.stdout
 
 
-def test_structured_ir_validator_blocks_missing_directory():
+def test_visual_spec_package_validator_blocks_missing_directory():
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), "missing-dir"],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), "missing-dir"],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
 
     assert result.returncode == 1
-    assert "IR_SOURCE_INTAKE_BLOCKED" in result.stdout
-    assert "IR_REQUIRED_ARTIFACT_MISSING" in result.stdout
-    assert "IR_READY_WITHOUT_EVIDENCE" in result.stdout
+    assert "VISUAL_SPEC_SOURCE_INTAKE_BLOCKED" in result.stdout
+    assert "VISUAL_SPEC_REQUIRED_ARTIFACT_MISSING" in result.stdout
+    assert "VISUAL_SPEC_READY_WITHOUT_EVIDENCE" in result.stdout
 
 
 @pytest.mark.parametrize(
@@ -677,7 +660,6 @@ def test_validator_passes_visual_source_matrix(source_type, fidelity, file_name)
     assert "Visual design intake readiness: PASS" in result.stdout
 
     shutil.rmtree(work_dir)
-
 
 def test_visual_validator_allows_remote_source_gap_but_blocks_integrity():
     work_dir = ROOT / ".tmp" / "test-validator-remote-source-gap"
@@ -1746,44 +1728,44 @@ def test_validator_blocks_legacy_figma_only_without_manifest():
     shutil.rmtree(work_dir)
 
 
-def test_html_ssot_validator_passes_complete_minimal_bundle():
-    work_dir = ROOT / ".tmp" / "test-html-ssot-validator-pass"
+def test_visual_previews_validator_passes_complete_minimal_bundle():
+    work_dir = ROOT / ".tmp" / "test-visual-previews-validator-pass"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    html_dir = work_dir / "visual-design" / "figma2htmlssot"
-    write_html_ssot_fixture(html_dir)
+    html_dir = work_dir / "visual-design" / "previews"
+    write_visual_previews_fixture(html_dir)
 
     result = subprocess.run(
-        [sys.executable, str(HTML_SSOT_VALIDATOR), str(html_dir)],
+        [sys.executable, str(VISUAL_PREVIEWS_VALIDATOR), str(html_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "HTML SSOT readiness: PASS" in result.stdout
+    assert "Visual preview readiness: PASS" in result.stdout
 
     shutil.rmtree(work_dir)
 
 
-def test_html_ssot_validator_blocks_missing_directory():
+def test_visual_previews_validator_blocks_missing_directory():
     result = subprocess.run(
-        [sys.executable, str(HTML_SSOT_VALIDATOR), "missing-dir"],
+        [sys.executable, str(VISUAL_PREVIEWS_VALIDATOR), "missing-dir"],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
 
     assert result.returncode == 1
-    assert "HTML_SSOT_REQUIRED_ARTIFACT_MISSING" in result.stdout
+    assert "VISUAL_PREVIEW_REQUIRED_ARTIFACT_MISSING" in result.stdout
 
 
-def test_html_ssot_validator_blocks_source_intake_blocked():
-    work_dir = ROOT / ".tmp" / "test-html-ssot-source-blocked"
+def test_visual_previews_validator_blocks_source_intake_blocked():
+    work_dir = ROOT / ".tmp" / "test-visual-previews-source-blocked"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    html_dir = work_dir / "visual-design" / "figma2htmlssot"
-    write_html_ssot_fixture(html_dir)
+    html_dir = work_dir / "visual-design" / "previews"
+    write_visual_previews_fixture(html_dir)
     packet = html_dir.parent / "visual-evidence-packet.md"
     packet.write_text(
         "---\n"
@@ -1797,7 +1779,7 @@ def test_html_ssot_validator_blocks_source_intake_blocked():
     )
 
     result = subprocess.run(
-        [sys.executable, str(HTML_SSOT_VALIDATOR), "--json", str(html_dir)],
+        [sys.executable, str(VISUAL_PREVIEWS_VALIDATOR), "--json", str(html_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -1805,23 +1787,23 @@ def test_html_ssot_validator_blocks_source_intake_blocked():
 
     payload = json.loads(result.stdout)
     assert result.returncode == 1
-    assert "HTML_SSOT_SOURCE_INTAKE_BLOCKED" in payload["blockers"]
+    assert "VISUAL_PREVIEW_SOURCE_INTAKE_BLOCKED" in payload["blockers"]
 
     shutil.rmtree(work_dir)
 
 
-def test_html_ssot_validator_reports_schema_errors_in_json():
-    work_dir = ROOT / ".tmp" / "test-html-ssot-schema-error"
+def test_visual_previews_validator_reports_schema_errors_in_json():
+    work_dir = ROOT / ".tmp" / "test-visual-previews-schema-error"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    html_dir = work_dir / "visual-design" / "figma2htmlssot"
-    write_html_ssot_fixture(html_dir)
-    figma_map = json.loads((html_dir / "figma-map.json").read_text(encoding="utf-8"))
-    figma_map["mappings"][0].pop("selector")
-    (html_dir / "figma-map.json").write_text(json.dumps(figma_map), encoding="utf-8")
+    html_dir = work_dir / "visual-design" / "previews"
+    write_visual_previews_fixture(html_dir)
+    component_coverage = yaml.safe_load((html_dir / "component-coverage.yaml").read_text(encoding="utf-8"))
+    component_coverage["components"][0]["covered"][0].pop("preview_ref")
+    (html_dir / "component-coverage.yaml").write_text(yaml.safe_dump(component_coverage), encoding="utf-8")
 
     result = subprocess.run(
-        [sys.executable, str(HTML_SSOT_VALIDATOR), "--json", str(html_dir)],
+        [sys.executable, str(VISUAL_PREVIEWS_VALIDATOR), "--json", str(html_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -1829,8 +1811,8 @@ def test_html_ssot_validator_reports_schema_errors_in_json():
 
     payload = json.loads(result.stdout)
     assert result.returncode == 1
-    assert "HTML_SSOT_SCHEMA_INVALID" in payload["blockers"]
-    assert payload["details"]["schema_validation"]["figma_map"]["valid"] is False
+    assert "VISUAL_PREVIEW_SCHEMA_INVALID" in payload["blockers"]
+    assert payload["details"]["schema_validation"]["component_coverage"]["valid"] is False
 
     shutil.rmtree(work_dir)
 
@@ -1838,53 +1820,68 @@ def test_html_ssot_validator_reports_schema_errors_in_json():
 @pytest.mark.parametrize(
     ("edit_kind", "expected_blocker"),
     [
-        ("missing_selector", "HTML_SSOT_FIGMA_NODE_COVERAGE_INCOMPLETE"),
-        ("component_state", "HTML_SSOT_COMPONENT_STATE_COVERAGE_INCOMPLETE"),
-        ("page", "HTML_SSOT_PAGE_COVERAGE_INCOMPLETE"),
-        ("asset", "HTML_SSOT_ASSET_TRACEABILITY_INCOMPLETE"),
-        ("viewport", "HTML_SSOT_VIEWPORT_CAPTURE_INCOMPLETE"),
-        ("visual_diff", "HTML_SSOT_VISUAL_DIFF_BLOCKED"),
-        ("known_gap", "HTML_SSOT_KNOWN_GAP_UNRESOLVED"),
+        ("missing_selector", "VISUAL_PREVIEW_FIGMA_NODE_COVERAGE_INCOMPLETE"),
+        ("component_state", "VISUAL_PREVIEW_COMPONENT_STATE_COVERAGE_INCOMPLETE"),
+        ("page", "VISUAL_PREVIEW_PAGE_COVERAGE_INCOMPLETE"),
+        ("asset", "VISUAL_PREVIEW_ASSET_TRACEABILITY_INCOMPLETE"),
+        ("viewport", "VISUAL_PREVIEW_VIEWPORT_CAPTURE_INCOMPLETE"),
+        ("visual_diff", "VISUAL_PREVIEW_VISUAL_DIFF_BLOCKED"),
+        ("known_gap", "VISUAL_PREVIEW_KNOWN_GAP_UNRESOLVED"),
     ],
 )
-def test_html_ssot_validator_blocks_incomplete_coverage(edit_kind, expected_blocker):
-    work_dir = ROOT / ".tmp" / f"test-html-ssot-{edit_kind}"
+def test_visual_previews_validator_blocks_incomplete_coverage(edit_kind, expected_blocker):
+    work_dir = ROOT / ".tmp" / f"test-visual-previews-{edit_kind}"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    html_dir = work_dir / "visual-design" / "figma2htmlssot"
-    write_html_ssot_fixture(html_dir)
+    html_dir = work_dir / "visual-design" / "previews"
+    write_visual_previews_fixture(html_dir)
 
     if edit_kind == "missing_selector":
-        html = (html_dir / "visual-spec.html").read_text(encoding="utf-8")
-        (html_dir / "visual-spec.html").write_text(html.replace('data-figma-node-id="2"', ""), encoding="utf-8")
-    elif edit_kind == "component_state":
-        coverage = (html_dir / "coverage-report.md").read_text(encoding="utf-8")
-        (html_dir / "coverage-report.md").write_text(
-            coverage.replace("component_state_coverage_complete: true", "component_state_coverage_complete: false"),
+        html = (html_dir / "component-matrix-preview.html").read_text(encoding="utf-8")
+        (html_dir / "component-matrix-preview.html").write_text(
+            html.replace('id="button-md-primary-default"', "").replace(
+                'data-preview-id="button-md-primary-default"', ""
+            ),
             encoding="utf-8",
         )
+    elif edit_kind == "component_state":
+        component_coverage = yaml.safe_load((html_dir / "component-coverage.yaml").read_text(encoding="utf-8"))
+        component_coverage["components"][0]["missing"].append(
+            {
+                "missing_type": "state",
+                "state": "loading",
+                "reason": "Missing Figma source state",
+                "blocker": "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING",
+            }
+        )
+        (html_dir / "component-coverage.yaml").write_text(yaml.safe_dump(component_coverage), encoding="utf-8")
     elif edit_kind == "page":
-        figma_map = json.loads((html_dir / "figma-map.json").read_text(encoding="utf-8"))
-        figma_map["mappings"] = [item for item in figma_map["mappings"] if item["acceptance_unit"] != "page"]
-        (html_dir / "figma-map.json").write_text(json.dumps(figma_map), encoding="utf-8")
+        viewport_coverage = yaml.safe_load((html_dir / "viewport-coverage.yaml").read_text(encoding="utf-8"))
+        viewport_coverage["viewports"][0]["page_refs"] = []
+        (html_dir / "viewport-coverage.yaml").write_text(yaml.safe_dump(viewport_coverage), encoding="utf-8")
     elif edit_kind == "asset":
-        assets = json.loads((html_dir / "assets-manifest.json").read_text(encoding="utf-8"))
-        assets["assets"][0]["source_refs"] = []
-        (html_dir / "assets-manifest.json").write_text(json.dumps(assets), encoding="utf-8")
+        component_coverage = yaml.safe_load((html_dir / "component-coverage.yaml").read_text(encoding="utf-8"))
+        component_coverage["components"][0]["missing"].append(
+            {
+                "missing_type": "resource",
+                "resource": "logo",
+                "reason": "Missing Figma image resource",
+                "blocker": "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING",
+            }
+        )
+        (html_dir / "component-coverage.yaml").write_text(yaml.safe_dump(component_coverage), encoding="utf-8")
     elif edit_kind == "viewport":
         shutil.rmtree(html_dir / "screenshots")
         (html_dir / "screenshots").mkdir()
     elif edit_kind == "visual_diff":
-        coverage = (html_dir / "coverage-report.md").read_text(encoding="utf-8")
-        (html_dir / "coverage-report.md").write_text(
-            coverage.replace("visual_diff_status: pass", "visual_diff_status: blocked"),
-            encoding="utf-8",
-        )
+        viewport_coverage = yaml.safe_load((html_dir / "viewport-coverage.yaml").read_text(encoding="utf-8"))
+        viewport_coverage["viewports"][0]["visual_diff_status"] = "blocked"
+        (html_dir / "viewport-coverage.yaml").write_text(yaml.safe_dump(viewport_coverage), encoding="utf-8")
     elif edit_kind == "known_gap":
         (html_dir / "known-gaps.md").write_text("# Known Gaps\n\nBLOCKED: missing mobile state.\n", encoding="utf-8")
 
     result = subprocess.run(
-        [sys.executable, str(HTML_SSOT_VALIDATOR), "--json", str(html_dir)],
+        [sys.executable, str(VISUAL_PREVIEWS_VALIDATOR), "--json", str(html_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -1897,33 +1894,33 @@ def test_html_ssot_validator_blocks_incomplete_coverage(edit_kind, expected_bloc
     shutil.rmtree(work_dir)
 
 
-def test_structured_ir_validator_passes_complete_minimal_bundle():
-    work_dir = ROOT / ".tmp" / "test-structured-ir-validator-pass"
+def test_visual_spec_package_validator_passes_complete_minimal_bundle():
+    work_dir = ROOT / ".tmp" / "test-visual-spec-package-validator-pass"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    ir_dir = work_dir / "visual-design" / "structured-ir"
-    write_structured_ir_fixture(ir_dir)
+    package_dir = work_dir / "visual-design" / "visual-spec-package"
+    write_visual_spec_package_fixture(package_dir)
 
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), str(ir_dir)],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), str(package_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "Structured IR intake readiness: PASS" in result.stdout
+    assert "Visual Spec Package intake readiness: PASS" in result.stdout
 
     shutil.rmtree(work_dir)
 
 
-def test_structured_ir_validator_blocks_source_intake_blocked():
-    work_dir = ROOT / ".tmp" / "test-structured-ir-source-blocked"
+def test_visual_spec_package_validator_blocks_source_intake_blocked():
+    work_dir = ROOT / ".tmp" / "test-visual-spec-package-source-blocked"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    ir_dir = work_dir / "visual-design" / "structured-ir"
-    write_structured_ir_fixture(ir_dir)
-    packet = ir_dir.parent / "visual-evidence-packet.md"
+    package_dir = work_dir / "visual-design" / "visual-spec-package"
+    write_visual_spec_package_fixture(package_dir)
+    packet = package_dir.parent / "visual-evidence-packet.md"
     packet.write_text(
         "---\n"
         "ready_gate: BLOCKED\n"
@@ -1936,7 +1933,7 @@ def test_structured_ir_validator_blocks_source_intake_blocked():
     )
 
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), "--json", str(ir_dir)],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), "--json", str(package_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -1944,26 +1941,26 @@ def test_structured_ir_validator_blocks_source_intake_blocked():
 
     payload = json.loads(result.stdout)
     assert result.returncode == 1
-    assert "IR_SOURCE_INTAKE_BLOCKED" in payload["blockers"]
-    assert "IR_READY_WITHOUT_EVIDENCE" in payload["blockers"]
+    assert "VISUAL_SPEC_SOURCE_INTAKE_BLOCKED" in payload["blockers"]
+    assert "VISUAL_SPEC_READY_WITHOUT_EVIDENCE" in payload["blockers"]
 
     shutil.rmtree(work_dir)
 
 
-def test_structured_ir_validator_reports_schema_errors_in_json():
-    work_dir = ROOT / ".tmp" / "test-structured-ir-schema-error"
+def test_visual_spec_package_validator_reports_schema_errors_in_json():
+    work_dir = ROOT / ".tmp" / "test-visual-spec-package-schema-error"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    ir_dir = work_dir / "visual-design" / "structured-ir"
-    write_structured_ir_fixture(ir_dir)
-    text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-    (ir_dir / "structured-ir.yaml").write_text(
+    package_dir = work_dir / "visual-design" / "visual-spec-package"
+    write_visual_spec_package_fixture(package_dir)
+    text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+    (package_dir / "visual-spec.yaml").write_text(
         text.replace("    role: button\n", ""),
         encoding="utf-8",
     )
 
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), "--json", str(ir_dir)],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), "--json", str(package_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -1971,8 +1968,8 @@ def test_structured_ir_validator_reports_schema_errors_in_json():
 
     payload = json.loads(result.stdout)
     assert result.returncode == 1
-    assert "IR_SCHEMA_INVALID" in payload["blockers"]
-    assert payload["details"]["schema_validation"]["structured_ir"]["valid"] is False
+    assert "VISUAL_SPEC_SCHEMA_INVALID" in payload["blockers"]
+    assert payload["details"]["schema_validation"]["visual_spec_package"]["valid"] is False
 
     shutil.rmtree(work_dir)
 
@@ -1980,23 +1977,23 @@ def test_structured_ir_validator_reports_schema_errors_in_json():
 @pytest.mark.parametrize(
     ("artifact", "detail_key"),
     [
-        ("structured-ir.yaml", "structured_ir"),
-        ("ir-assertions.yaml", "ir_assertions"),
+        ("visual-spec.yaml", "visual_spec_package"),
+        ("visual-spec-assertions.yaml", "visual_spec_assertions"),
     ],
 )
-def test_structured_ir_validator_rejects_unknown_blocker_codes(artifact, detail_key):
-    work_dir = ROOT / ".tmp" / f"test-structured-ir-unknown-blocker-{detail_key}"
+def test_visual_spec_package_validator_rejects_unknown_blocker_codes(artifact, detail_key):
+    work_dir = ROOT / ".tmp" / f"test-visual-spec-package-unknown-blocker-{detail_key}"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    ir_dir = work_dir / "visual-design" / "structured-ir"
-    write_structured_ir_fixture(ir_dir)
+    package_dir = work_dir / "visual-design" / "visual-spec-package"
+    write_visual_spec_package_fixture(package_dir)
 
-    path = ir_dir / artifact
+    path = package_dir / artifact
     text = path.read_text(encoding="utf-8")
     path.write_text(text.replace("    blockers: []", "    blockers: [NOT_A_BLOCKER]", 1), encoding="utf-8")
 
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), "--json", str(ir_dir)],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), "--json", str(package_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -2004,7 +2001,7 @@ def test_structured_ir_validator_rejects_unknown_blocker_codes(artifact, detail_
 
     payload = json.loads(result.stdout)
     assert result.returncode == 1
-    assert "IR_SCHEMA_INVALID" in payload["blockers"]
+    assert "VISUAL_SPEC_SCHEMA_INVALID" in payload["blockers"]
     assert payload["details"]["schema_validation"][detail_key]["valid"] is False
 
     shutil.rmtree(work_dir)
@@ -2013,77 +2010,77 @@ def test_structured_ir_validator_rejects_unknown_blocker_codes(artifact, detail_
 @pytest.mark.parametrize(
     ("edit_kind", "expected_blocker"),
     [
-        ("provider_evidence", "IR_PROVIDER_EVIDENCE_MISSING"),
-        ("provider_evidence_blocker", "IR_PROVIDER_EVIDENCE_MISSING"),
-        ("product_ambiguity", "IR_PRODUCT_AMBIGUITY_UNRESOLVED"),
-        ("locator", "IR_LOCATOR_STRATEGY_INVALID"),
-        ("ownership", "IR_DOWNSTREAM_OWNERSHIP_LEAK"),
-        ("assertion_coverage", "IR_ASSERTION_COVERAGE_INCOMPLETE"),
-        ("assertion_blocker", "IR_ASSERTION_COVERAGE_INCOMPLETE"),
-        ("cross_ref", "IR_ASSERTION_COVERAGE_INCOMPLETE"),
-        ("evidence_packet", "IR_READY_WITHOUT_EVIDENCE"),
+        ("provider_evidence", "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING"),
+        ("provider_evidence_blocker", "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING"),
+        ("product_ambiguity", "VISUAL_SPEC_PRODUCT_AMBIGUITY_UNRESOLVED"),
+        ("locator", "VISUAL_SPEC_LOCATOR_STRATEGY_INVALID"),
+        ("ownership", "VISUAL_SPEC_DOWNSTREAM_OWNERSHIP_LEAK"),
+        ("assertion_coverage", "VISUAL_SPEC_ASSERTION_COVERAGE_INCOMPLETE"),
+        ("assertion_blocker", "VISUAL_SPEC_ASSERTION_COVERAGE_INCOMPLETE"),
+        ("cross_ref", "VISUAL_SPEC_ASSERTION_COVERAGE_INCOMPLETE"),
+        ("evidence_packet", "VISUAL_SPEC_READY_WITHOUT_EVIDENCE"),
     ],
 )
-def test_structured_ir_validator_blocks_readiness_failures(edit_kind, expected_blocker):
-    work_dir = ROOT / ".tmp" / f"test-structured-ir-{edit_kind}"
+def test_visual_spec_package_validator_blocks_readiness_failures(edit_kind, expected_blocker):
+    work_dir = ROOT / ".tmp" / f"test-visual-spec-package-{edit_kind}"
     if work_dir.exists():
         shutil.rmtree(work_dir)
-    ir_dir = work_dir / "visual-design" / "structured-ir"
-    write_structured_ir_fixture(ir_dir)
+    package_dir = work_dir / "visual-design" / "visual-spec-package"
+    write_visual_spec_package_fixture(package_dir)
 
     if edit_kind == "provider_evidence":
-        text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-        (ir_dir / "structured-ir.yaml").write_text(
+        text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec.yaml").write_text(
             text.replace("provider_evidence_complete: true", "provider_evidence_complete: false"),
             encoding="utf-8",
         )
     elif edit_kind == "provider_evidence_blocker":
-        text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-        (ir_dir / "structured-ir.yaml").write_text(
-            text.replace("    blockers: []", "    blockers: [IR_PROVIDER_EVIDENCE_MISSING]", 1),
+        text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec.yaml").write_text(
+            text.replace("    blockers: []", "    blockers: [VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING]", 1),
             encoding="utf-8",
         )
     elif edit_kind == "product_ambiguity":
-        text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-        (ir_dir / "structured-ir.yaml").write_text(
+        text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec.yaml").write_text(
             text.replace("product_ambiguities: []", "product_ambiguities:\n  - Save disabled conditions are not specified."),
             encoding="utf-8",
         )
     elif edit_kind == "locator":
-        text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-        (ir_dir / "structured-ir.yaml").write_text(
+        text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec.yaml").write_text(
             text.replace("      value: button[name='Save']", "      value: '#save-button'"),
             encoding="utf-8",
         )
     elif edit_kind == "ownership":
-        text = (ir_dir / "structured-ir.yaml").read_text(encoding="utf-8")
-        (ir_dir / "structured-ir.yaml").write_text(
+        text = (package_dir / "visual-spec.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec.yaml").write_text(
             text.replace("    blockers: []", "    blockers: []\n    code_component: SaveButton", 1),
             encoding="utf-8",
         )
     elif edit_kind == "assertion_coverage":
-        text = (ir_dir / "ir-assertions.yaml").read_text(encoding="utf-8")
-        (ir_dir / "ir-assertions.yaml").write_text(
+        text = (package_dir / "visual-spec-assertions.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec-assertions.yaml").write_text(
             text.replace("    ci_suitability: ci_low_cost", "    ci_suitability: manual_review"),
             encoding="utf-8",
         )
     elif edit_kind == "assertion_blocker":
-        text = (ir_dir / "ir-assertions.yaml").read_text(encoding="utf-8")
-        (ir_dir / "ir-assertions.yaml").write_text(
-            text.replace("    blockers: []", "    blockers: [IR_PROVIDER_EVIDENCE_MISSING]", 1),
+        text = (package_dir / "visual-spec-assertions.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec-assertions.yaml").write_text(
+            text.replace("    blockers: []", "    blockers: [VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING]", 1),
             encoding="utf-8",
         )
     elif edit_kind == "cross_ref":
-        text = (ir_dir / "ir-assertions.yaml").read_text(encoding="utf-8")
-        (ir_dir / "ir-assertions.yaml").write_text(
-            text.replace("      - IR-home-save-default", "      - IR-missing"),
+        text = (package_dir / "visual-spec-assertions.yaml").read_text(encoding="utf-8")
+        (package_dir / "visual-spec-assertions.yaml").write_text(
+            text.replace("      - VS-home-save-default", "      - VS-missing"),
             encoding="utf-8",
         )
     elif edit_kind == "evidence_packet":
-        (ir_dir / "ir-evidence-packet.md").write_text(
+        (package_dir / "visual-spec-evidence-packet.md").write_text(
             "---\n"
             "ready_gate: BLOCKED\n"
-            "blockers: [IR_PROVIDER_EVIDENCE_MISSING]\n"
+            "blockers: [VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING]\n"
             "source_ref_count: 1\n"
             "extracted_item_count: 1\n"
             "generated_at: '2026-07-01T00:00:00Z'\n"
@@ -2092,7 +2089,7 @@ def test_structured_ir_validator_blocks_readiness_failures(edit_kind, expected_b
         )
 
     result = subprocess.run(
-        [sys.executable, str(STRUCTURED_IR_VALIDATOR), "--json", str(ir_dir)],
+        [sys.executable, str(VISUAL_SPEC_PACKAGE_VALIDATOR), "--json", str(package_dir)],
         cwd=ROOT,
         text=True,
         capture_output=True,

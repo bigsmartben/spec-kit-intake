@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec-kit-intake.local/schemas/component-coverage.schema.json",
+  "title": "Visual Design Component Coverage",
+  "type": "object",
+  "required": ["ready_gate", "blockers", "components"],
+  "properties": {
+    "ready_gate": { "enum": ["PASS", "BLOCKED"] },
+    "blockers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/blocker_code" }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "source_ref", "name", "required_dimensions", "covered", "missing"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "source_ref": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "required_dimensions": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            }
+          },
+          "covered": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["visual_spec_ref", "preview_ref"],
+              "properties": {
+                "visual_spec_ref": { "type": "string", "minLength": 1 },
+                "preview_ref": { "type": "string", "minLength": 1 },
+                "source_ref": { "type": "string", "minLength": 1 },
+                "screenshot_refs": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1 }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["missing_type", "reason", "blocker"],
+              "properties": {
+                "missing_type": {
+                  "enum": [
+                    "state",
+                    "variant",
+                    "viewport",
+                    "resource",
+                    "asset",
+                    "token",
+                    "screenshot",
+                    "visual_diff",
+                    "source_evidence",
+                    "visual_spec_ref",
+                    "preview_ref"
+                  ]
+                },
+                "reason": { "type": "string", "minLength": 1 },
+                "blocker": { "$ref": "#/$defs/blocker_code" }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "blocker_code": {
+      "enum": [
+        "VISUAL_PREVIEW_SOURCE_INTAKE_BLOCKED",
+        "VISUAL_PREVIEW_REQUIRED_ARTIFACT_MISSING",
+        "VISUAL_PREVIEW_FIGMA_NODE_COVERAGE_INCOMPLETE",
+        "VISUAL_PREVIEW_COMPONENT_STATE_COVERAGE_INCOMPLETE",
+        "VISUAL_PREVIEW_PAGE_COVERAGE_INCOMPLETE",
+        "VISUAL_PREVIEW_ASSET_TRACEABILITY_INCOMPLETE",
+        "VISUAL_PREVIEW_VIEWPORT_CAPTURE_INCOMPLETE",
+        "VISUAL_PREVIEW_VISUAL_DIFF_BLOCKED",
+        "VISUAL_PREVIEW_KNOWN_GAP_UNRESOLVED",
+        "VISUAL_PREVIEW_SCHEMA_INVALID",
+        "VISUAL_SPEC_PROVIDER_EVIDENCE_MISSING",
+        "VISUAL_SPEC_ASSERTION_COVERAGE_INCOMPLETE"
+      ]
+    }
+  },
+  "additionalProperties": true
+}
