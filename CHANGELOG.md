@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 ## Unreleased
 
@@ -6,15 +6,15 @@
 
 ### Added
 
-- Added `/speckit.intake.ir` for structured UI acceptance IR with CI-friendly DOM, ARIA, token, state, locator, relation, and assertion evidence.
-- Added structured IR schemas and `validate_structured_ir_intake.py` for source readiness, cross-reference, provider-evidence, product-ambiguity, locator, downstream-ownership, and CI assertion checks.
+- Added visual-design visual spec package artifacts for CI-friendly DOM, ARIA, token, state, locator, relation, and assertion evidence.
+- Added visual spec package schemas and `validate_visual_spec_package.py` for source readiness, cross-reference, provider-evidence, product-ambiguity, locator, downstream-ownership, and CI assertion checks.
+- Added `visual-design/previews/` with `component-matrix-preview.html` for human review and `component-coverage.yaml` / `viewport-coverage.yaml` for machine-checkable coverage evidence under `/speckit.intake.visual-design`.
 
 ## [0.1.3] - 2026-06-29
 
 ### Added
 
-- Added `/speckit.intake.figma2htmlssot` for Figma-derived HTML visual SSOT bundles with component-state, page, asset, viewport, screenshot, and coverage evidence.
-- Added HTML SSOT schemas and `validate_html_ssot.py` for bundle artifact, Figma node, component-state, page, asset, viewport, visual-diff, and known-gap readiness checks.
+- Added Figma-derived visual preview coverage evidence with component-state, page, asset, viewport, screenshot, and known-gap readiness checks.
 - Added bounded visual inference statuses for irregular Figma and visual-design sources, including `candidate` and `unsupported` claim handling.
 - Added readiness blocking for unbounded visual inference and unsupported visual claims.
 
